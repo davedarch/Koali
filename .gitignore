@@ -1,7 +1,6 @@
 #my-ignores
 
 fetch_python_scripts.py
-README.md
 scripts/
 gpt-consultation.md
 python-server-command.txt
