@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>drag | koali</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background-color: #f4f4f4;
+      position: relative;
+    }
+
+    #instruction {
+      font-size: 48px;
+      margin-top: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      height: 10vh;
+      width: 100%;
+      background-color: #f4f4f4;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+    }
+
+    #play-icon {
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .draggable {
+      width: 100px;
+      height: 100px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      cursor: grab;
+      border-radius: 8px;
+      top: 10vh;
+    }
+
+    #target {
+      width: 120px;
+      height: 120px;
+      background-color: #e74c3c; /* Red color for level 1 */
+      position: absolute;
+      border-radius: 50%; /* Make it a circle */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      transition: background-color 0.3s;
+      top: 10vh; /* Ensure it starts below the instruction area */
+    }
+
+    #target.active {
+      background-color: #2ecc71;
+    }
+
+    .clickable-word {
+      margin: 0 5px; /* Add space between words */
+      cursor: pointer;
+      transition: color 0.3s, background-color 0.3s; /* Smooth transition for hover effect */
+    }
+
+    .clickable-word:hover {
+      color: #3498db; /* Change text color on hover */
+      background-color: #e0f7fa; /* Optional: Add background highlight on hover */
+    }
+  </style>
+</head>
+<body>
+  <div id="instruction">
+    Drag the blue square onto the red square
+    <i id="play-icon" class="fas fa-play-circle"></i>
+  </div>
+  <div id="draggable1" class="draggable" style="background-color: #3498db;"></div>
+  <div id="draggable2" class="draggable" style="background-color: #e67e22;"></div>
+  <div id="draggable3" class="draggable" style="background-color: #9b59b6;"></div>
+  <div id="draggable5" class="draggable" style="background-color: #f1c40f;"></div>
+  <div id="draggable6" class="draggable" style="background-color: #c0392b;"></div>
+  <div id="target">Drop here</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/plain-draggable@2.5.15/plain-draggable.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const draggables = document.querySelectorAll('.draggable');
+      const target = document.getElementById('target');
+      const playIcon = document.getElementById('play-icon');
+      const instructionElement = document.getElementById('instruction');
+      let correctDraggable;
+
+      // Mapping of RGB values to color names
+      const colorMap = {
+        'rgb(52, 152, 219)': 'blue',
+        'rgb(230, 126, 34)': 'orange',
+        'rgb(155, 89, 182)': 'purple',
+        'rgb(241, 196, 15)': 'yellow',
+        'rgb(192, 57, 43)': 'red'
+      };
+
+      // Function to generate random positions, avoiding the top 10% of the screen
+      const randomPosition = (element) => {
+        const maxX = window.innerWidth - element.offsetWidth;
+        const maxY = window.innerHeight - element.offsetHeight - (window.innerHeight * 0.1); // Adjust maxY to avoid top 10%
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY) + (window.innerHeight * 0.1); // Start Y position after top 10%
+        element.style.left = `${randomX}px`;
+        element.style.top = `${randomY}px`;
+      };
+
+      // Randomly select a correct draggable
+      const randomIndex = Math.floor(Math.random() * draggables.length);
+      correctDraggable = draggables[randomIndex];
+      const correctColor = colorMap[correctDraggable.style.backgroundColor];
+
+      // Update instruction text with clickable words
+      const instructionText = `Drag the ${correctColor} square onto the red circle`;
+      const words = instructionText.split(' ');
+      instructionElement.innerHTML = words.map(word => `<span class="clickable-word">${word}</span>`).join('&nbsp;') + ' <i id="play-icon" class="fas fa-play-circle"></i>';
+
+      // Add event listeners to each word
+      document.querySelectorAll('.clickable-word').forEach(span => {
+        span.addEventListener('click', () => {
+          const utterance = new SpeechSynthesisUtterance(span.textContent);
+          utterance.rate = 0.75; // Set a slightly slower rate if needed
+          window.speechSynthesis.speak(utterance);
+        });
+      });
+
+      // Randomize positions of all draggable items
+      draggables.forEach(draggable => {
+        randomPosition(draggable);
+        const draggableInstance = new PlainDraggable(draggable);
+
+        draggableInstance.onDragEnd = () => {
+          const draggableRect = draggable.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+
+          if (
+            draggable === correctDraggable && // Check if the correct square is dragged
+            draggableRect.left < targetRect.right &&
+            draggableRect.right > targetRect.left &&
+            draggableRect.top < targetRect.bottom &&
+            draggableRect.bottom > targetRect.top
+          ) {
+            target.classList.add('active');
+            setTimeout(() => {
+              location.reload(); // Reload the current page
+            }, 0); // Immediate reload
+          } else {
+            target.classList.remove('active');
+          }
+        };
+      });
+
+      // Randomize position of the target
+      randomPosition(target);
+
+      // Update the click handler for the play icon to use the stored instruction text
+      document.getElementById('play-icon').addEventListener('click', () => {
+        let delay = 0;
+
+        words.forEach((word, index) => {
+          setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 0.75; // Set a slightly slower rate if needed
+            window.speechSynthesis.speak(utterance);
+          }, delay);
+
+          // Increase delay for the next word
+          delay += 500; // 500ms pause between words
+        });
+      });
+    });
+  </script>
+</body>
+</html>

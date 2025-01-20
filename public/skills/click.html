@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>click | koali</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background-color: #f4f4f4;
+      position: relative;
+    }
+
+    #instruction {
+      font-size: 48px;
+      margin-top: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      height: 10vh;
+      width: 100%;
+      background-color: #f4f4f4;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+    }
+
+    #play-icon {
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 48px; /* Ensure the icon is large enough to be visible */
+    }
+
+    .clickable {
+      width: 100px;
+      height: 100px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      cursor: pointer;
+      top: 10vh;
+    }
+
+    .circle {
+      border-radius: 50%;
+    }
+
+    .square {
+      border-radius: 8px;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-left: 50px solid transparent;
+      border-right: 50px solid transparent;
+      border-bottom: 100px solid;
+      background-color: transparent;
+    }
+
+    .clickable-word {
+      margin: 0 5px; /* Add space between words */
+      cursor: pointer;
+      transition: color 0.3s, background-color 0.3s; /* Smooth transition for hover effect */
+    }
+
+    .clickable-word:hover {
+      color: #3498db; /* Change text color on hover */
+      background-color: #e0f7fa; /* Optional: Add background highlight on hover */
+    }
+  </style>
+</head>
+<body>
+  <div id="instruction">
+    Click the correct shape
+    <i id="play-icon" class="fas fa-play-circle"></i>
+  </div>
+  <div id="clickable1" class="clickable" style="background-color: #3498db;" data-color="#3498db"></div>
+  <div id="clickable2" class="clickable" style="background-color: #e67e22;" data-color="#e67e22"></div>
+  <div id="clickable3" class="clickable" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+  <div id="clickable5" class="clickable" style="background-color: #f1c40f;" data-color="#f1c40f"></div>
+  <div id="clickable6" class="clickable" style="background-color: #c0392b;" data-color="#c0392b"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const clickables = document.querySelectorAll('.clickable');
+      const playIcon = document.getElementById('play-icon');
+      const instructionElement = document.getElementById('instruction');
+      let correctClickable;
+
+      // Mapping of RGB values to color names
+      const colorMap = {
+        '#3498db': 'blue',
+        '#e67e22': 'orange',
+        '#9b59b6': 'purple',
+        '#f1c40f': 'yellow',
+        '#c0392b': 'red'
+      };
+
+      // Array of shape classes
+      const shapes = ['circle', 'square', 'triangle'];
+
+      // Function to generate random positions, avoiding the top 10% of the screen
+      const randomPosition = (element) => {
+        const maxX = window.innerWidth - element.offsetWidth;
+        const maxY = window.innerHeight - element.offsetHeight - (window.innerHeight * 0.1); // Adjust maxY to avoid top 10%
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY) + (window.innerHeight * 0.1); // Start Y position after top 10%
+        element.style.left = `${randomX}px`;
+        element.style.top = `${randomY}px`;
+      };
+
+      // Randomly select a correct clickable
+      const randomIndex = Math.floor(Math.random() * clickables.length);
+      correctClickable = clickables[randomIndex];
+      const correctColorHex = correctClickable.dataset.color;
+      const correctColor = colorMap[correctColorHex] || 'unknown';
+
+      // Assign random shapes to each clickable
+      clickables.forEach(clickable => {
+        const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+        if (randomShape === 'triangle') {
+          clickable.classList.add('triangle');
+          const shapeColor = clickable.dataset.color;
+          clickable.style.borderBottomColor = shapeColor;
+          clickable.style.backgroundColor = 'transparent';
+        } else {
+          clickable.classList.add(randomShape);
+        }
+      });
+
+      // Determine the correct shape
+      let correctShape = 'square'; // Default
+      if (correctClickable.classList.contains('circle')) {
+        correctShape = 'circle';
+      } else if (correctClickable.classList.contains('triangle')) {
+        correctShape = 'triangle';
+      } else if (correctClickable.classList.contains('square')) {
+        correctShape = 'square';
+      }
+
+      // Update instruction text with clickable words
+      const instructionText = `Click the ${correctColor} ${correctShape}`;
+      const words = instructionText.split(' ');
+      instructionElement.innerHTML = words.map(word => `<span class="clickable-word">${word}</span>`).join(' ') + ' <i id="play-icon" class="fas fa-play-circle"></i>';
+
+      // Add event listeners to each word
+      document.querySelectorAll('.clickable-word').forEach(span => {
+        span.addEventListener('click', () => {
+          const utterance = new SpeechSynthesisUtterance(span.textContent);
+          utterance.rate = 0.75; // Set a slightly slower rate if needed
+          window.speechSynthesis.speak(utterance);
+        });
+      });
+
+      // Update the click handler for the play icon to use the stored instruction text
+      document.getElementById('play-icon').addEventListener('click', () => {
+        let delay = 0;
+
+        words.forEach((word, index) => {
+          setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 0.75; // Set a slightly slower rate if needed
+            window.speechSynthesis.speak(utterance);
+          }, delay);
+
+          // Increase delay for the next word
+          delay += 500; // 500ms pause between words
+        });
+      });
+
+      // Randomize positions of all clickable items
+      clickables.forEach(clickable => {
+        randomPosition(clickable);
+        clickable.addEventListener('click', () => {
+          if (clickable === correctClickable) {
+            console.log('Correct shape clicked, reloading page...');
+            setTimeout(() => {
+              location.reload(); // Reload the current page
+            }, 0); // Delay to show success feedback
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
