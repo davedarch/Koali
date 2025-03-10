@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Koali | Digital Skills</title>
+  <title>Koali Learning Games</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -364,7 +364,7 @@
   <header>
     <div class="container header-content">
       <div class="logo">Koali</div>
-      <p class="tagline">Develop essential digital skills through interactive learning</p>
+      <p class="tagline">Interactive games for learning and skill development</p>
     </div>
   </header>
   
@@ -388,7 +388,7 @@
       <p class="section-subtitle">Select a skill to begin your training journey</p>
       
       <div class="skills-container">
-        <div class="skill-card" onclick="window.location.href='/skills/click.html'">
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=basic'">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
               <i class="fas fa-mouse-pointer"></i>
@@ -417,11 +417,11 @@
               <div class="progress-bar"></div>
             </div>
             
-            <a href="/skills/click.html" class="start-button">Start Training</a>
+            <a href="/skills/game.html?input=click&challenge=basic" class="start-button">Start Training</a>
           </div>
         </div>
         
-        <div class="skill-card" onclick="window.location.href='/skills/drag.html'">
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=drag&challenge=basic'">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
               <i class="fas fa-arrows-alt"></i>
@@ -450,85 +450,19 @@
               <div class="progress-bar"></div>
             </div>
             
-            <a href="/skills/drag.html" class="start-button">Start Training</a>
+            <a href="/skills/game.html?input=drag&challenge=basic" class="start-button">Start Training</a>
           </div>
         </div>
         
-        <div class="skill-card" onclick="window.location.href='/skills/select.html'">
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=number'">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
-              <i class="fas fa-border-style"></i>
+              <i class="fas fa-hashtag"></i>
             </div>
-            <h3 class="skill-title">Select</h3>
+            <h3 class="skill-title">Numbers</h3>
           </div>
           <div class="skill-card-body">
-            <p class="skill-description">Enhance your ability to identify and select the correct items from groups, improving visual discrimination.</p>
-            
-            <div class="skill-meta">
-              <div class="meta-item">
-                <span class="meta-value">5</span>
-                <span class="meta-label">Levels</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">15</span>
-                <span class="meta-label">Exercises</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">8</span>
-                <span class="meta-label">Minutes</span>
-              </div>
-            </div>
-            
-            <div class="progress-container">
-              <div class="progress-bar"></div>
-            </div>
-            
-            <a href="/skills/select.html" class="start-button">Start Training</a>
-          </div>
-        </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/sequence.html'">
-          <div class="skill-card-header">
-            <div class="skill-icon-wrapper">
-              <i class="fas fa-list-ol"></i>
-            </div>
-            <h3 class="skill-title">Sequence</h3>
-          </div>
-          <div class="skill-card-body">
-            <p class="skill-description">Develop your pattern recognition and sequential thinking through exercises that challenge memory.</p>
-            
-            <div class="skill-meta">
-              <div class="meta-item">
-                <span class="meta-value">5</span>
-                <span class="meta-label">Levels</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">15</span>
-                <span class="meta-label">Exercises</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">15</span>
-                <span class="meta-label">Minutes</span>
-              </div>
-            </div>
-            
-            <div class="progress-container">
-              <div class="progress-bar"></div>
-            </div>
-            
-            <a href="/skills/sequence.html" class="start-button">Start Training</a>
-          </div>
-        </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/spell.html'">
-          <div class="skill-card-header">
-            <div class="skill-icon-wrapper">
-              <i class="fas fa-spell-check"></i>
-            </div>
-            <h3 class="skill-title">Spell</h3>
-          </div>
-          <div class="skill-card-body">
-            <p class="skill-description">Improve your spelling skills with interactive exercises that enhance vocabulary and language proficiency.</p>
+            <p class="skill-description">Improve math skills by selecting the correct numbers.</p>
             
             <div class="skill-meta">
               <div class="meta-item">
@@ -549,7 +483,106 @@
               <div class="progress-bar"></div>
             </div>
             
-            <a href="/skills/spell.html" class="start-button">Start Training</a>
+            <a href="/skills/game.html?input=click&challenge=number" class="start-button">Start Training</a>
+          </div>
+        </div>
+        
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=size'">
+          <div class="skill-card-header">
+            <div class="skill-icon-wrapper">
+              <i class="fas fa-ruler"></i>
+            </div>
+            <h3 class="skill-title">Sizes</h3>
+          </div>
+          <div class="skill-card-body">
+            <p class="skill-description">Learn about different sizes by clicking on the correct objects.</p>
+            
+            <div class="skill-meta">
+              <div class="meta-item">
+                <span class="meta-value">5</span>
+                <span class="meta-label">Levels</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">15</span>
+                <span class="meta-label">Exercises</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">10</span>
+                <span class="meta-label">Minutes</span>
+              </div>
+            </div>
+            
+            <div class="progress-container">
+              <div class="progress-bar"></div>
+            </div>
+            
+            <a href="/skills/game.html?input=click&challenge=size" class="start-button">Start Training</a>
+          </div>
+        </div>
+        
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=word'">
+          <div class="skill-card-header">
+            <div class="skill-icon-wrapper">
+              <i class="fas fa-book"></i>
+            </div>
+            <h3 class="skill-title">Words</h3>
+          </div>
+          <div class="skill-card-body">
+            <p class="skill-description">Enhance vocabulary by identifying words in different categories.</p>
+            
+            <div class="skill-meta">
+              <div class="meta-item">
+                <span class="meta-value">5</span>
+                <span class="meta-label">Levels</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">15</span>
+                <span class="meta-label">Exercises</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">10</span>
+                <span class="meta-label">Minutes</span>
+              </div>
+            </div>
+            
+            <div class="progress-container">
+              <div class="progress-bar"></div>
+            </div>
+            
+            <a href="/skills/game.html?input=click&challenge=word" class="start-button">Start Training</a>
+          </div>
+        </div>
+        
+        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=spelling'">
+          <div class="skill-card-header">
+            <div class="skill-icon-wrapper">
+              <i class="fas fa-spell-check"></i>
+            </div>
+            <h3 class="skill-title">Spelling</h3>
+          </div>
+          <div class="skill-card-body">
+            <p class="skill-description">Practice spelling by selecting letters in the correct order.</p>
+            
+            <div class="skill-meta">
+              <div class="meta-item">
+                <span class="meta-value">5</span>
+                <span class="meta-label">Levels</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">15</span>
+                <span class="meta-label">Exercises</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-value">10</span>
+                <span class="meta-label">Minutes</span>
+              </div>
+            </div>
+            
+            <div class="progress-container">
+              <div class="progress-bar"></div>
+            </div>
+            
+            <a href="/skills/game.html?input=click&challenge=spelling" class="start-button">Start Training</a>
           </div>
         </div>
       </div>
