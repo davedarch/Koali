@@ -1,0 +1,58 @@
+/* Click interaction styles */
+.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.clickable:hover {
+  transform: scale(1.05);
+}
+
+.incorrect-click {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+/* Drag interaction styles */
+.draggable {
+  cursor: grab;
+}
+
+.draggable.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+.drop-target {
+  transition: background-color 0.3s ease;
+}
+
+.drop-target.active {
+  background-color: rgba(46, 204, 113, 0.3);
+}
+
+/* Select interaction styles */
+.selectable {
+  transition: outline 0.2s ease;
+}
+
+.selectable:hover {
+  outline: 2px solid rgba(52, 152, 219, 0.5);
+}
+
+.selectable.selected {
+  outline: 3px solid #3498db;
+}
+
+#selection-box {
+  position: absolute;
+  border: 2px dashed #3498db;
+  background-color: rgba(52, 152, 219, 0.2);
+  pointer-events: none;
+  z-index: 500;
+} 

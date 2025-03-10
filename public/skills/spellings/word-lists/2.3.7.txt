@@ -1,0 +1,13 @@
+# Year 2 Term 3 Week 7
+# Revision of adding suffixes to words ending in single consonant
+
+running
+hopping
+clapped
+stopped
+fatter
+thinner
+biggest
+hottest
+swimming
+beginning 

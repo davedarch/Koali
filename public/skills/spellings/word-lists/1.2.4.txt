@@ -1,0 +1,13 @@
+# Year 1 Term 2 Week 4
+# Adding -er and -est to adjectives
+
+bigger
+biggest
+taller
+tallest
+longer
+longest
+smaller
+smallest
+quicker
+quickest 

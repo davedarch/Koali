@@ -1,0 +1,13 @@
+# Year 6 Term 2 Week 4
+# Challenge words with multiple spelling patterns
+
+environment
+equip
+equipped
+equipment
+especially
+exaggerate
+excellent
+existence
+explanation
+familiar 

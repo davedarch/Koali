@@ -1,0 +1,106 @@
+/* Challenge element styles */
+.challenge-element {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+  position: absolute;
+}
+
+/* Add shadow to non-triangle elements */
+.circle, .square, .number-element, .word-element {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.challenge-element:hover {
+  transform: scale(1.05);
+}
+
+/* Shape styles */
+.circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+}
+
+.square {
+  width: 80px;
+  height: 80px;
+}
+
+/* Improved triangle styling */
+.triangle {
+  width: 0;
+  height: 0;
+  border-left: 40px solid transparent;
+  border-right: 40px solid transparent;
+  border-bottom-width: 80px;
+  border-bottom-style: solid;
+  /* The border-bottom-color will be set via JavaScript */
+  background-color: transparent !important;
+  position: relative;
+  /* Custom triangle shadow */
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Remove the ::before pseudo-element that was causing issues */
+.triangle::before {
+  display: none;
+}
+
+/* Size styles */
+.size-small {
+  transform: scale(0.7);
+}
+
+.size-medium {
+  transform: scale(1);
+}
+
+.size-large {
+  transform: scale(1.3);
+}
+
+/* Number element styles */
+.number-element {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  font-size: 28px;
+}
+
+/* Word element styles */
+.word-element {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  margin: 5px;
+}
+
+/* Selected state for elements */
+.selected {
+  border: 3px solid white;
+  transform: scale(1.05);
+}
+
+/* Clickable elements */
+.clickable {
+  cursor: pointer;
+}
+
+/* Drop target styles */
+.drop-target {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 3px dashed #333;
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.drop-target.highlight {
+  background-color: rgba(52, 152, 219, 0.3);
+} 

@@ -1,0 +1,10 @@
+analyze
+evaluate
+synthesize
+interpret
+formulate
+hypothesis
+persuade
+justify
+compare
+contrast

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills Game</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/challenges.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background-color: #f4f4f4;
+    }
+    
+    #instruction {
+      font-size: 48px;
+      margin-top: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 10vh;
+      width: 100%;
+      background-color: #f4f4f4;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    #progress-container {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 10vh;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    #progress-bar {
+      width: 80%;
+      height: 20px;
+      background-color: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    
+    #progress-fill {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    #level-indicator {
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="instruction"></div>
+    <div id="progress-container">
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+      <div id="level-indicator">Level 1</div>
+    </div>
+  </div>
+
+  <!-- Core Framework -->
+  <script src="js/core/base.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/factory.js"></script>
+  <script src="js/core/game.js"></script>
+  
+  <!-- UI Components -->
+  <script src="js/ui/progress.js"></script>
+  <script src="js/ui/feedback.js"></script>
+  <script src="js/ui/audio.js"></script>
+  
+  <!-- Challenge Types -->
+  <script src="js/challenges/challenge.js"></script>
+  <script src="js/challenges/basic.js"></script>
+  <script src="js/challenges/number.js"></script>
+  <script src="js/challenges/size.js"></script>
+  <script src="js/challenges/word.js"></script>
+  
+  <!-- Input Methods -->
+  <script src="js/input/input.js"></script>
+  <script src="js/input/click.js"></script>
+  <script src="js/input/drag.js"></script>
+  
+  <!-- Debug Panel -->
+  <script src="js/debug.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const inputType = urlParams.get('input') || 'click';
+      const challengeType = urlParams.get('challenge') || 'basic';
+      const level = parseInt(urlParams.get('level') || '1');
+      
+      try {
+        // Create input method
+        const inputMethod = GameFactory.createInputMethod(inputType);
+        
+        // Create challenge type
+        const challenge = GameFactory.createChallenge(challengeType);
+        
+        // Create game with options
+        const game = new Game(inputMethod, challenge, {
+          startLevel: level,
+          maxLevel: 10
+        });
+        
+        // Start the game
+        await game.start();
+      } catch (error) {
+        console.error('Error loading game modules:', error);
+        document.getElementById('instruction').textContent = 'Error loading game. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html> 

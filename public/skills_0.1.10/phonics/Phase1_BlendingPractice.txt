@@ -1,0 +1,10 @@
+tap
+map
+sit
+run
+bet
+hop
+jug
+lid
+red
+bun

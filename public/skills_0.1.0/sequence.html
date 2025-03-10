@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sequence | koali</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f4f4f4;
+      user-select: none;
+    }
+
+    #instruction-container {
+      font-size: 48px;
+      margin: 20px 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80%;
+      background-color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #play-icon {
+      margin-left: 10px;
+      cursor: pointer;
+      color: #3498db;
+    }
+
+    #draggables-container, #sequence-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      width: 90%;
+    }
+
+    .draggable {
+      width: 100px;
+      height: 100px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px;
+      cursor: grab;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      user-select: none;
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+    }
+
+    .sequence-slot {
+      width: 120px;
+      height: 120px;
+      border: 2px dashed #3498db;
+      border-radius: 8px;
+      margin: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fafafa;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .sequence-slot.over {
+      background-color: #e0f7fa;
+      border-color: #1abc9c;
+    }
+
+    #submit-button {
+      display: none; /* Hide the submit button */
+    }
+
+    #feedback {
+      font-size: 20px;
+      margin-top: 20px;
+      height: 24px; /* To maintain space even when empty */
+    }
+
+    /* Highlight correct and incorrect slots */
+    .correct {
+      border-color: #2ecc71 !important;
+      background-color: #d4edda !important;
+    }
+
+    .incorrect {
+      border-color: #e74c3c !important;
+      background-color: #f8d7da !important;
+    }
+
+    /* Ensure draggable items inside slots are sized properly */
+    .sequence-slot .draggable {
+      margin: 0;
+      cursor: default;
+    }
+
+    .clickable-word {
+      margin: 0 5px;
+      cursor: pointer;
+      transition: color 0.3s, background-color 0.3s;
+    }
+
+    .clickable-word:hover {
+      color: #3498db;
+      background-color: #e0f7fa;
+    }
+  </style>
+</head>
+<body>
+  <div id="instruction-container">
+    <span id="sequence-instruction">Loading...</span>
+    <i id="play-icon" class="fas fa-play-circle"></i>
+  </div>
+  
+  <div id="draggables-container">
+    <!-- Draggable elements will be dynamically added here -->
+  </div>
+  
+  <div id="sequence-container">
+    <!-- Sequence slots will be dynamically added here -->
+  </div>
+  
+  <div id="feedback"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const draggablesContainer = document.getElementById('draggables-container');
+      const sequenceContainer = document.getElementById('sequence-container');
+      const playIcon = document.getElementById('play-icon');
+      const sequenceInstructionElement = document.getElementById('sequence-instruction');
+      const feedback = document.getElementById('feedback');
+
+      const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6'];
+      const colorNames = {
+        '#e74c3c': 'red',
+        '#3498db': 'blue',
+        '#2ecc71': 'green',
+        '#f1c40f': 'yellow',
+        '#9b59b6': 'purple'
+      };
+      const shapes = ['50%', '0%', 'triangle'];
+      const shapeNames = {
+        '50%': 'circle',
+        '0%': 'square',
+        'triangle': 'triangle'
+      };
+
+      const sequenceLength = 3; // Number of items in the sequence
+      let correctSequence = [];
+
+      // Shuffle array in-place
+      const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      };
+
+      // Generate random color and shape
+      const generateRandomAttributes = () => {
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        return { color, shape };
+      };
+
+      // Create draggable element
+      const createDraggable = (id, color, shape) => {
+        const draggable = document.createElement('div');
+        draggable.classList.add('draggable');
+        draggable.setAttribute('draggable', 'true');
+        draggable.setAttribute('data-id', id);
+        draggable.style.backgroundColor = color;
+
+        if (shape === 'triangle') {
+          draggable.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+        } else {
+          draggable.style.borderRadius = shape;
+        }
+
+        draggable.textContent = id + 1; // Optional: Display number
+
+        // Event listeners for drag and drop
+        draggable.addEventListener('dragstart', (e) => {
+          draggedElement = draggable;
+          e.dataTransfer.setData('text/plain', id);
+          setTimeout(() => {
+            draggable.classList.add('dragging');
+          }, 0);
+        });
+
+        draggable.addEventListener('dragend', () => {
+          draggedElement = null;
+          draggable.classList.remove('dragging');
+        });
+
+        draggablesContainer.appendChild(draggable);
+      };
+
+      // Create sequence slots
+      const createSequenceSlots = () => {
+        for (let i = 0; i < sequenceLength; i++) {
+          const slot = document.createElement('div');
+          slot.classList.add('sequence-slot');
+          slot.setAttribute('data-slot', i);
+
+          // Event listeners for drop targets
+          slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            slot.classList.add('over');
+          });
+
+          slot.addEventListener('dragleave', () => {
+            slot.classList.remove('over');
+          });
+
+          slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('over');
+            if (draggedElement) {
+              // If slot already has a child, return it to draggables
+              if (slot.firstChild) {
+                draggablesContainer.appendChild(slot.firstChild);
+              }
+              slot.appendChild(draggedElement);
+
+              // Check the sequence after each drop
+              checkSequence();
+            }
+          });
+
+          sequenceContainer.appendChild(slot);
+        }
+      };
+
+      // Function to check the sequence
+      const checkSequence = () => {
+        const userSequence = [];
+        const slots = sequenceContainer.querySelectorAll('.sequence-slot');
+        slots.forEach(slot => {
+          if (slot.firstChild) {
+            let color = slot.firstChild.style.backgroundColor;
+            color = rgbToHex(color); // Convert RGB to Hex
+            let shape;
+            if (slot.firstChild.style.clipPath && slot.firstChild.style.clipPath.includes('polygon')) {
+              shape = 'triangle';
+            } else {
+              shape = shapeNames[slot.firstChild.style.borderRadius];
+            }
+            const colorName = colorNames[color.toLowerCase()] || 'undefined color';
+            userSequence.push(`${colorName} ${shape}`);
+          } else {
+            userSequence.push(null);
+          }
+        });
+
+        // Compare userSequence with correctSequence
+        let isCorrect = true;
+        slots.forEach((slot, index) => {
+          slot.classList.remove('correct', 'incorrect');
+          const expected = correctSequence[index];
+          const actual = userSequence[index];
+          if (expected === actual) {
+            slot.classList.add('correct');
+          } else {
+            if (actual !== null) {
+              slot.classList.add('incorrect');
+            }
+            isCorrect = false;
+          }
+        });
+
+        if (isCorrect) {
+          // Load a new game immediately when the sequence is correct
+          setTimeout(() => {
+            initGame(); // Reload the game
+          }, 1000); // Optional delay before reloading
+        }
+      };
+
+      // Update instruction text with clickable words
+      const updateInstructionText = (sequence) => {
+        // Split the sequence text to separate the instruction from the shapes
+        const [instruction, ...shapes] = sequence.split(': ');
+        
+        // Create two lines with separate divs
+        const instructionText = `
+          <div>${instruction.split(' ').map(word => `<span class="clickable-word">${word}</span>`).join(' ')}:</div>
+          <div>${shapes.join('').split(' ').map(word => `<span class="clickable-word">${word}</span>`).join(' ')}</div>
+        `;
+        sequenceInstructionElement.innerHTML = instructionText;
+      };
+
+      // Add event listeners to each word
+      const addWordClickListeners = () => {
+        document.querySelectorAll('.clickable-word').forEach(span => {
+          span.addEventListener('click', () => {
+            const utterance = new SpeechSynthesisUtterance(span.textContent);
+            utterance.rate = 0.75; // Set a slightly slower rate if needed
+            window.speechSynthesis.speak(utterance);
+          });
+        });
+      };
+
+      // Initialize the game
+      const initGame = () => {
+        // Clear previous content if any
+        draggablesContainer.innerHTML = '';
+        sequenceContainer.innerHTML = '';
+        feedback.textContent = '';
+        correctSequence = [];
+
+        // Select sequenceLength unique elements for the correct sequence
+        const selectedAttributes = [];
+        while (selectedAttributes.length < sequenceLength) {
+          const attrs = generateRandomAttributes();
+          // Ensure uniqueness in the sequence
+          const exists = selectedAttributes.some(attr => attr.color === attrs.color && attr.shape === attrs.shape);
+          if (!exists) {
+            selectedAttributes.push(attrs);
+          }
+        }
+        correctSequence = selectedAttributes.map(attr => `${colorNames[attr.color]} ${shapeNames[attr.shape]}`);
+
+        // Display instruction
+        const sequenceText = `Sequence the shapes: ${correctSequence.join(', ')}`;
+        updateInstructionText(sequenceText);
+        addWordClickListeners();
+
+        // Populate draggables with some extra elements
+        const totalDraggables = sequenceLength + 2; // Adding extra draggable elements
+        const allAttributes = [...selectedAttributes];
+        while (allAttributes.length < totalDraggables) {
+          const attrs = generateRandomAttributes();
+          // Avoid duplicates with the correct sequence
+          const exists = selectedAttributes.some(attr => attr.color === attrs.color && attr.shape === attrs.shape);
+          if (!exists) {
+            allAttributes.push(attrs);
+          }
+        }
+
+        // Shuffle all attributes before creating draggables
+        shuffleArray(allAttributes);
+
+        allAttributes.forEach((attr, index) => {
+          createDraggable(index, attr.color, attr.shape);
+        });
+
+        // Create sequence slots
+        createSequenceSlots();
+      };
+
+      // Event listener for play icon
+      playIcon.addEventListener('click', () => {
+        const utterance = new SpeechSynthesisUtterance(sequenceInstructionElement.textContent);
+        utterance.rate = 0.75;
+        window.speechSynthesis.speak(utterance);
+      });
+
+      let draggedElement = null; // Track the currently dragged element
+
+      /**
+       * Converts an RGB color string to its hexadecimal representation.
+       * @param {string} rgb - The RGB color string (e.g., "rgb(52, 152, 219)").
+       * @returns {string} - The hexadecimal color string (e.g., "#3498db").
+       */
+      function rgbToHex(rgb) {
+        const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
+        return result
+          ? "#" +
+              ((1 << 24) + (parseInt(result[1]) << 16) + (parseInt(result[2]) << 8) + parseInt(result[3]))
+                .toString(16)
+                .slice(1)
+          : rgb;
+      }
+
+      // Initialize the game on page load
+      initGame();
+    });
+  </script>
+</body>
+</html>

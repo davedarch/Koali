@@ -1,0 +1,10 @@
+analyse
+evaluate
+hypothesise
+investigate
+synthesise
+conclude
+interpret
+demonstrate
+implement
+validate 

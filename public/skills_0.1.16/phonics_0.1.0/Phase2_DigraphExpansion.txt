@@ -1,0 +1,10 @@
+shell
+shock
+chess
+chip
+thorn
+thank
+bang
+song
+duck
+clock

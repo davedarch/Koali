@@ -1,0 +1,20 @@
+apple
+banana
+orange
+pizza
+pasta
+bread
+cheese
+chicken
+rice
+potato
+carrot
+cake
+ice cream
+chocolate
+sandwich
+soup
+fish
+egg
+milk
+cookie 

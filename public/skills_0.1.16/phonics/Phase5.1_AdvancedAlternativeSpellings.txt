@@ -1,0 +1,10 @@
+make
+train
+play
+weigh
+vein
+obey
+key
+eight
+straight
+great

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>spell | koali</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --square-size: 180px;
+      --font-size: 72px;
+      --word-font-size: 108px;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #d3d3f3;
+      user-select: none;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    #word-container {
+      font-size: var(--word-font-size);
+      margin: 40px 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+    }
+
+    #draggables-container, #sequence-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 40px 0;
+      width: 95vw;
+      max-width: 1400px;
+    }
+
+    .draggable, .sequence-slot {
+      width: var(--square-size);
+      height: var(--square-size);
+      color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px;
+      flex-shrink: 0;
+      cursor: grab;
+      border: 6px solid #3498db;
+      border-radius: 24px;
+      background-color: white;
+      font-size: var(--font-size);
+      font-weight: bold;
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+    }
+
+    .sequence-slot.over {
+      background-color: #e0f7fa;
+      border-color: #1abc9c;
+    }
+
+    #feedback {
+      font-size: 60px;
+      margin-top: 60px;
+      height: 72px;
+    }
+
+    #play-icon {
+      cursor: pointer;
+      font-size: 108px;
+      margin-left: 30px;
+    }
+
+    .clickable-word {
+      margin: 0 15px;
+      cursor: pointer;
+      transition: color 0.3s, background-color 0.3s;
+    }
+
+    .clickable-word:hover {
+      color: #3498db;
+      background-color: #e0f7fa;
+    }
+    
+    /* Level system styles */
+    #level-indicator {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      background-color: #3498db;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 18px;
+      z-index: 1001;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    #level-progress-container {
+      position: fixed;
+      top: 50px;
+      right: 20px;
+      width: 150px;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      z-index: 1001;
+    }
+
+    #level-progress-bar {
+      height: 100%;
+      background-color: #2ecc71;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+    
+    /* Success animation */
+    @keyframes success-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .success-animation {
+      animation: success-pulse 0.5s ease-in-out;
+    }
+    
+    /* Level completion animation */
+    @keyframes level-complete {
+      0% { background-color: #2ecc71; }
+      50% { background-color: #f1c40f; }
+      100% { background-color: #2ecc71; }
+    }
+    
+    .level-complete-animation {
+      animation: level-complete 1s ease-in-out;
+    }
+    
+    /* Feedback styles */
+    #feedback-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #feedback-modal {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 300px;
+      z-index: 1000;
+    }
+
+    #feedback-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #feedback-form input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .optional-label {
+      color: #666;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    #feedback-form textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    #feedback-form button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #feedback-form button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div id="word-container">
+    <span id="current-word" class="clickable-word">Loading...</span>
+    <i id="play-icon" class="fas fa-play-circle"></i>
+  </div>
+  
+  <div id="draggables-container">
+    <!-- Draggable letters will be dynamically added here -->
+  </div>
+  
+  <div id="sequence-container">
+    <!-- Sequence slots will be dynamically added here -->
+  </div>
+  
+  <div id="feedback"></div>
+  
+  <!-- Level indicator and progress bar -->
+  <div id="level-indicator">Level 1</div>
+  <div id="level-progress-container">
+    <div id="level-progress-bar"></div>
+  </div>
+  
+  <!-- Feedback button and modal -->
+  <button id="feedback-button">
+    <i class="fas fa-comment"></i>
+  </button>
+  
+  <div id="feedback-modal">
+    <form id="feedback-form">
+      <input type="text" placeholder="Your name">
+      <input type="email" placeholder="Your email"><span class="optional-label">(optional)</span>
+      <textarea placeholder="Share your feedback or report an issue..."></textarea>
+      <button type="submit">Send Feedback</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const wordContainer = document.getElementById('word-container');
+      const currentWordElement = document.getElementById('current-word');
+      const draggablesContainer = document.getElementById('draggables-container');
+      const sequenceContainer = document.getElementById('sequence-container');
+      const feedback = document.getElementById('feedback');
+      const playIcon = document.getElementById('play-icon');
+      const levelIndicator = document.getElementById('level-indicator');
+      const levelProgressBar = document.getElementById('level-progress-bar');
+      const feedbackButton = document.getElementById('feedback-button');
+      const feedbackModal = document.getElementById('feedback-modal');
+      const feedbackForm = document.getElementById('feedback-form');
+
+      let currentWord = '';
+      let draggedElement = null;
+      let startTime; // To track time for each attempt
+      
+      // Level system variables
+      let currentPhase = parseInt(localStorage.getItem('spellGamePhase')) || 1;
+      let currentFileIndex = parseInt(localStorage.getItem('spellGameFileIndex')) || 0;
+      const maxPhase = 1; // Currently only using Phase 1 files
+      let gameProgress = parseInt(localStorage.getItem('spellGameProgress')) || 0;
+      let challengeMode = false; // Track if we're in the audio-only challenge mode
+      
+      // Word lists organized by phase and files
+      const phaseFiles = {
+        1: [
+          'phonics/Phase1_BlendingPractice.txt',
+          'phonics/Phase1_ShortVowelFamilies.txt',
+          'phonics/Phase1_EarlyDigraphWords.txt',
+          'phonics/Phase1_TrickyWords.txt'
+        ]
+        // Add more phases as needed
+        // 2: ['phonics/Phase2_File1.txt', 'phonics/Phase2_File2.txt'],
+      };
+      
+      // Get current file path
+      function getCurrentFilePath() {
+        return phaseFiles[currentPhase][currentFileIndex];
+      }
+      
+      // Get current file name (for display)
+      function getCurrentFileName() {
+        const path = getCurrentFilePath();
+        // Extract the file name without extension and remove Phase prefix
+        const fileName = path.split('/').pop().replace('.txt', '').replace(/^Phase\d+_/, '');
+        // Convert camelCase to spaces (e.g., ShortVowelFamilies -> Short Vowel Families)
+        return fileName.replace(/([A-Z])/g, ' $1').trim();
+      }
+      
+      // Current words for the current file
+      let currentFileWords = [];
+
+      // Initialize variables for tracking word count
+      let currentWordIndex = 1;
+      let totalWordsInFile = 0;
+      
+      // Update phase display
+      function updatePhaseDisplay() {
+        const fileName = getCurrentFileName();
+        const totalWords = totalWordsInFile || 0;
+        
+        levelIndicator.textContent = `Phase ${currentPhase}: ${fileName} (${currentWordIndex}/${totalWords})${challengeMode ? ' - Challenge' : ''}`;
+      }
+
+      // Update the progress bar
+      function updateProgressBar() {
+        levelProgressBar.style.width = `${gameProgress}%`;
+      }
+
+      // Load words from the current text file
+      const loadWords = async () => {
+        try {
+          const filePath = getCurrentFilePath();
+          console.log(`Attempting to load words from: ${filePath}`);
+          
+          const response = await fetch(filePath);
+          if (!response.ok) {
+            console.error(`Failed to load words: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to load words: ${response.status}`);
+          }
+          
+          const text = await response.text();
+          console.log(`Successfully loaded words from ${filePath}:`, text);
+          
+          const words = text.split('\n')
+            .map(word => word.trim())
+            .filter(word => word.length > 0);
+            
+          console.log(`Processed ${words.length} words from file`);
+          return words;
+        } catch (error) {
+          console.error('Detailed error loading words:', error);
+          // Fallback to basic words if file loading fails
+          alert(`Failed to load words. Using fallback words instead. Error: ${error.message}`);
+          return ['cat', 'dog', 'run', 'jump', 'play', 'big', 'red', 'sun', 'hat', 'map'];
+        }
+      };
+
+      // Shuffle array in-place
+      const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      };
+
+      // Create draggable letter
+      const createDraggable = (letter, index) => {
+        const draggable = document.createElement('div');
+        draggable.classList.add('draggable');
+        draggable.setAttribute('draggable', 'true');
+        draggable.textContent = letter;
+
+        // Event listeners for drag and drop
+        draggable.addEventListener('dragstart', (e) => {
+          draggedElement = draggable;
+          e.dataTransfer.setData('text/plain', index);
+          setTimeout(() => {
+            draggable.classList.add('dragging');
+          }, 0);
+        });
+
+        draggable.addEventListener('dragend', () => {
+          draggedElement = null;
+          draggable.classList.remove('dragging');
+        });
+
+        // Add click event to play letter sound
+        draggable.addEventListener('click', () => {
+          const utterance = new SpeechSynthesisUtterance(letter);
+          window.speechSynthesis.speak(utterance);
+        });
+
+        draggablesContainer.appendChild(draggable);
+      };
+
+      // Create sequence slots
+      const createSequenceSlots = (word) => {
+        sequenceContainer.innerHTML = ''; // Clear previous slots
+        for (let i = 0; i < word.length; i++) {
+          const slot = document.createElement('div');
+          slot.classList.add('sequence-slot');
+          slot.setAttribute('data-slot', i);
+
+          // Event listeners for drop targets
+          slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            slot.classList.add('over');
+          });
+
+          slot.addEventListener('dragleave', () => {
+            slot.classList.remove('over');
+          });
+
+          slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('over');
+            if (draggedElement) {
+              // If slot already has a child, return it to draggables
+              if (slot.firstChild) {
+                draggablesContainer.appendChild(slot.firstChild);
+              }
+              slot.appendChild(draggedElement);
+
+              // Check if the word is spelled correctly after each drop
+              checkWord();
+            }
+          });
+
+          sequenceContainer.appendChild(slot);
+        }
+      };
+
+      // Initialize the game
+      const initGame = async () => {
+        try {
+          console.log("Initializing game...");
+          
+          // If we haven't already loaded words (from startGame), then load them
+          if (!currentFileWords || currentFileWords.length === 0) {
+            console.log("No words loaded in initGame, loading from file...");
+            currentFileWords = await loadWords();
+            if (currentFileWords.length === 0) {
+              throw new Error("No words were loaded from the file");
+            }
+            shuffleArray(currentFileWords);
+            console.log(`Loaded and shuffled ${currentFileWords.length} words`);
+          }
+          
+          if (currentFileWords.length === 0) {
+            currentWordElement.textContent = 'No words available.';
+            console.error("No words available after loading attempt");
+            return;
+          }
+
+          // Start timing this attempt
+          startTime = Date.now();
+
+          // If we're not in challenge mode, get a new word
+          // If we're in challenge mode, use the same word as before
+          if (!challengeMode) {
+            currentWord = currentFileWords.shift();
+            console.log(`Selected new word: ${currentWord}`);
+            
+            // Update the word count based on words consumed
+            currentWordIndex = totalWordsInFile - currentFileWords.length;
+            
+            if (currentFileWords.length === 0) {
+              // All words have been used—reload and reshuffle
+              console.log("Used all words, reloading file...");
+              currentFileWords = await loadWords();
+              shuffleArray(currentFileWords);
+              console.log(`Reloaded ${currentFileWords.length} words`);
+            }
+          } else {
+            console.log(`Using same word in challenge mode: ${currentWord}`);
+          }
+          
+          // Update the display with current word count
+          updatePhaseDisplay();
+          
+          // In challenge mode, hide the word and play the audio
+          if (challengeMode) {
+            currentWordElement.textContent = "🔊 Listen";
+            // Play the word audio automatically
+            setTimeout(() => {
+              const utterance = new SpeechSynthesisUtterance(currentWord);
+              utterance.rate = 0.75;
+              window.speechSynthesis.speak(utterance);
+            }, 500);
+          } else {
+            currentWordElement.textContent = currentWord;
+          }
+
+          // Calculate dynamic sizes based on word length
+          const updateSquareSizes = () => {
+            // Use the container width instead of window width
+            const containerWidth = Math.min(window.innerWidth * 0.95, 1400); // 95% of window width, max 1400px
+            const wordLength = currentWord.length;
+            const totalMargins = (wordLength - 1) * 20; // 10px margin on each side
+            const totalBorders = wordLength * 12; // 6px border on each side
+            
+            // Calculate size accounting for margins and borders, with 15% increase
+            const squareSize = Math.min(
+              ((containerWidth - totalMargins - totalBorders) / wordLength) * 1.15,
+              207 // Maximum size cap (180 * 1.15)
+            );
+            
+            // Ensure minimum size of 46px (40 * 1.15)
+            const finalSize = Math.max(squareSize, 46);
+            
+            // Update CSS variables with proportional font sizes
+            document.documentElement.style.setProperty('--square-size', `${finalSize}px`);
+            document.documentElement.style.setProperty('--font-size', `${Math.max(finalSize * 0.45, 23)}px`);
+            document.documentElement.style.setProperty('--word-font-size', `${Math.max(finalSize * 0.6, 35)}px`);
+          };
+
+          // Call initially and add resize listener
+          updateSquareSizes();
+          window.addEventListener('resize', updateSquareSizes);
+
+          // Create jumbled letters
+          const letters = currentWord.split('');
+          shuffleArray(letters);
+
+          // Check if the shuffled letters accidentally spell the word, and reshuffle if they do
+          while (letters.join('') === currentWord) {
+            shuffleArray(letters);
+          }
+
+          // Clear previous content
+          draggablesContainer.innerHTML = '';
+          feedback.textContent = '';
+
+          // Create draggables and slots
+          letters.forEach((letter, index) => createDraggable(letter, index));
+          createSequenceSlots(currentWord);
+        } catch (error) {
+          console.error("Error initializing game:", error);
+          currentWordElement.textContent = `Error loading game: ${error.message}`;
+        }
+      };
+
+      // Check if the word is spelled correctly
+      const checkWord = () => {
+        const slots = sequenceContainer.querySelectorAll('.sequence-slot');
+        let spelledWord = '';
+        let allSlotsFilled = true;
+        
+        slots.forEach(slot => {
+          if (slot.firstChild) {
+            spelledWord += slot.firstChild.textContent;
+          } else {
+            allSlotsFilled = false;
+          }
+        });
+
+        // Only check if all slots are filled
+        if (!allSlotsFilled) return;
+
+        if (spelledWord === currentWord) {
+          // Success! Add success animation to sequence container
+          sequenceContainer.classList.add('success-animation');
+          
+          // Calculate time taken
+          const endTime = Date.now();
+          const timeTaken = (endTime - startTime) / 1000; // Convert to seconds
+          
+          // Calculate progress increment based on speed
+          let progressIncrement;
+          
+          // Award more progress in challenge mode
+          const challengeMultiplier = challengeMode ? 1.5 : 1;
+          
+          if (timeTaken < 3) {
+            // Very fast (under 3 seconds) - 30% progress
+            progressIncrement = 30 * challengeMultiplier;
+          } else if (timeTaken < 6) {
+            // Fast (3-6 seconds) - 25% progress
+            progressIncrement = 25 * challengeMultiplier;
+          } else if (timeTaken < 10) {
+            // Good (6-10 seconds) - 20% progress
+            progressIncrement = 20 * challengeMultiplier;
+          } else if (timeTaken < 15) {
+            // Medium (10-15 seconds) - 15% progress
+            progressIncrement = 15 * challengeMultiplier;
+          } else if (timeTaken < 20) {
+            // Slower (15-20 seconds) - 10% progress
+            progressIncrement = 10 * challengeMultiplier;
+          } else {
+            // Very slow (over 20 seconds) - 5% progress
+            progressIncrement = 5 * challengeMultiplier;
+          }
+          
+          // Update progress
+          gameProgress += progressIncrement;
+          
+          // Save progress to localStorage
+          localStorage.setItem('spellGameProgress', gameProgress);
+          
+          // Update progress bar
+          updateProgressBar();
+          
+          // Check if we should advance to next file or phase (progress >= 100%)
+          if (gameProgress >= 100) {
+            // Add level completion animation to progress bar
+            levelProgressBar.classList.add('level-complete-animation');
+            
+            // Reset progress for next file/phase
+            gameProgress = 0;
+            localStorage.setItem('spellGameProgress', gameProgress);
+            
+            // Advance to next file or phase
+            challengeMode = false; // Reset to normal mode
+            
+            // Move to the next file or phase
+            const currentPhaseFiles = phaseFiles[currentPhase];
+            if (currentFileIndex < currentPhaseFiles.length - 1) {
+              // Move to next file in the same phase
+              currentFileIndex++;
+            } else if (currentPhase < maxPhase) {
+              // Move to the first file of the next phase
+              currentPhase++;
+              currentFileIndex = 0;
+            } else if (currentFileIndex >= currentPhaseFiles.length - 1 && currentPhase >= maxPhase) {
+              // We've completed all files in all phases
+              showCompletionMessage();
+              return; // Exit the function early to prevent setting up a new game
+            }
+            
+            // Clear current file words to force loading new ones
+            currentFileWords = [];
+            
+            // Save state
+            localStorage.setItem('spellGamePhase', currentPhase);
+            localStorage.setItem('spellGameFileIndex', currentFileIndex);
+            localStorage.setItem('spellGameChallengeMode', challengeMode);
+            
+            // Update display
+            updatePhaseDisplay();
+            
+            // Remove level completion animation after a delay
+            setTimeout(() => {
+              levelProgressBar.classList.remove('level-complete-animation');
+            }, 1000);
+          } else {
+            // If we're not advancing to the next file or phase, toggle challenge mode for the next word
+            if (!challengeMode) {
+              // Switch to challenge mode for the same word
+              challengeMode = true;
+              localStorage.setItem('spellGameChallengeMode', challengeMode);
+              updatePhaseDisplay();
+            } else {
+              // We've completed both normal and challenge modes for this word
+              challengeMode = false; // Reset to normal mode for next word
+              localStorage.setItem('spellGameChallengeMode', challengeMode);
+              updatePhaseDisplay();
+            }
+          }
+          
+          // Set up next round after a short delay
+          setTimeout(() => {
+            sequenceContainer.classList.remove('success-animation');
+            initGame();
+          }, 1500);
+        }
+      };
+      
+      // Function to show completion message
+      function showCompletionMessage() {
+        // Create a completion overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '2000';
+        
+        // Create congratulations message
+        const message = document.createElement('h1');
+        message.textContent = 'Congratulations!';
+        message.style.color = 'white';
+        message.style.fontSize = '3rem';
+        message.style.marginBottom = '20px';
+        message.style.textAlign = 'center';
+        
+        // Create sub-message
+        const subMessage = document.createElement('p');
+        subMessage.textContent = 'You have completed all levels of the Spell skill!';
+        subMessage.style.color = 'white';
+        subMessage.style.fontSize = '1.5rem';
+        subMessage.style.marginBottom = '30px';
+        subMessage.style.textAlign = 'center';
+        
+        // Create home button
+        const homeButton = document.createElement('button');
+        homeButton.textContent = 'Return to Home';
+        homeButton.style.padding = '15px 30px';
+        homeButton.style.fontSize = '1.2rem';
+        homeButton.style.backgroundColor = '#3498db';
+        homeButton.style.color = 'white';
+        homeButton.style.border = 'none';
+        homeButton.style.borderRadius = '30px';
+        homeButton.style.cursor = 'pointer';
+        homeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        
+        // Add hover effect
+        homeButton.onmouseover = () => {
+          homeButton.style.backgroundColor = '#2980b9';
+        };
+        homeButton.onmouseout = () => {
+          homeButton.style.backgroundColor = '#3498db';
+        };
+        
+        // Add click event to redirect to home
+        homeButton.onclick = () => {
+          // Reset game state before redirecting
+          localStorage.setItem('spellGamePhase', 1);
+          localStorage.setItem('spellGameFileIndex', 0);
+          localStorage.setItem('spellGameProgress', 0);
+          localStorage.setItem('spellGameChallengeMode', false);
+          
+          // Redirect to home page
+          window.location.href = '/';
+        };
+        
+        // Add elements to overlay
+        overlay.appendChild(message);
+        overlay.appendChild(subMessage);
+        overlay.appendChild(homeButton);
+        
+        // Add overlay to body
+        document.body.appendChild(overlay);
+        
+        // Add confetti effect
+        createConfetti();
+      }
+      
+      // Function to create confetti effect
+      function createConfetti() {
+        const confettiCount = 200;
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+        
+        for (let i = 0; i < confettiCount; i++) {
+          const confetti = document.createElement('div');
+          confetti.style.position = 'fixed';
+          confetti.style.width = `${Math.random() * 10 + 5}px`;
+          confetti.style.height = `${Math.random() * 5 + 5}px`;
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.top = '-10px';
+          confetti.style.left = `${Math.random() * 100}vw`;
+          confetti.style.opacity = Math.random();
+          confetti.style.zIndex = '1999';
+          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+          
+          document.body.appendChild(confetti);
+          
+          // Animate confetti
+          const duration = Math.random() * 3 + 2;
+          const delay = Math.random() * 2;
+          
+          confetti.animate([
+            { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+            { transform: `translate(${Math.random() * 100 - 50}px, ${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+          ], {
+            duration: duration * 1000,
+            delay: delay * 1000,
+            easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)',
+            fill: 'forwards'
+          });
+          
+          // Remove confetti after animation
+          setTimeout(() => {
+            document.body.removeChild(confetti);
+          }, (duration + delay) * 1000);
+        }
+      }
+
+      // Play the entire word
+      playIcon.addEventListener('click', () => {
+        const utterance = new SpeechSynthesisUtterance(currentWord);
+        utterance.rate = 0.75; // Slightly slower rate for clarity
+        window.speechSynthesis.speak(utterance);
+      });
+
+      // Reset button (for testing) - double click on level indicator
+      levelIndicator.addEventListener('dblclick', () => {
+        localStorage.setItem('spellGamePhase', 1);
+        localStorage.setItem('spellGameFileIndex', 0);
+        localStorage.setItem('spellGameProgress', 0);
+        localStorage.setItem('spellGameChallengeMode', false);
+        currentPhase = 1;
+        currentFileIndex = 0;
+        gameProgress = 0;
+        challengeMode = false;
+        currentFileWords = []; // Force reload of words
+        updatePhaseDisplay();
+        updateProgressBar();
+        initGame();
+      });
+      
+      // Feedback functionality
+      feedbackButton.addEventListener('click', () => {
+        feedbackModal.style.display = feedbackModal.style.display === 'none' ? 'block' : 'none';
+      });
+
+      feedbackForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const feedback = feedbackForm.querySelector('textarea').value;
+        const name = feedbackForm.querySelector('input[type="text"]').value;
+        const email = feedbackForm.querySelector('input[type="email"]').value;
+        
+        try {
+          if (!feedback.trim()) {
+            throw new Error('Please enter some feedback before submitting');
+          }
+
+          // First save to local server
+          const response = await fetch('/submit-feedback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              feedback,
+              name,
+              email
+            })
+          });
+
+          const data = await response.json();
+          
+          if (response.ok) {
+            alert('Thank you for your feedback!');
+            feedbackForm.querySelector('textarea').value = '';
+            feedbackForm.querySelector('input[type="text"]').value = '';
+            feedbackForm.querySelector('input[type="email"]').value = '';
+            feedbackModal.style.display = 'none';
+          } else {
+            throw new Error(data.error || 'Failed to submit feedback');
+          }
+        } catch (error) {
+          console.error('Detailed error:', error);
+          
+          // Create a more user-friendly error message
+          let userMessage = 'Sorry, there was an error submitting your feedback: ';
+          
+          if (error.message.includes('Failed to fetch')) {
+            userMessage += 'Network error - please check your internet connection.';
+          } else if (error.message.includes('API Error')) {
+            userMessage += error.message;
+          } else {
+            userMessage += error.message;
+          }
+          
+          alert(userMessage);
+        }
+      });
+
+      // Close modal when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!feedbackModal.contains(e.target) && e.target !== feedbackButton) {
+          feedbackModal.style.display = 'none';
+        }
+      });
+
+      // Initialize variables for tracking word count
+      totalWordsInFile = 0;
+      
+      // Initialize the game
+      async function startGame() {
+        try {
+          // Load words once and store them globally
+          const allWords = await loadWords();
+          currentFileWords = allWords;
+          totalWordsInFile = allWords.length;
+          console.log(`Total words in file: ${totalWordsInFile}`);
+          
+          // Then initialize the game using saved words and state
+          currentPhase = parseInt(localStorage.getItem('spellGamePhase')) || 1;
+          currentFileIndex = parseInt(localStorage.getItem('spellGameFileIndex')) || 0;
+          challengeMode = localStorage.getItem('spellGameChallengeMode') === 'true';
+          updatePhaseDisplay();
+          updateProgressBar();
+          await initGame();
+        } catch (error) {
+          console.error("Error starting game:", error);
+          currentWordElement.textContent = `Error loading game: ${error.message}`;
+        }
+      }
+      
+      // Start the game
+      startGame();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+/* Main styles for the skills game */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background-color: #f4f4f4;
+  overflow: hidden;
+}
+
+#instruction {
+  font-size: 48px;
+  margin-top: 0;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 10vh;
+  width: 100%;
+  background-color: #f4f4f4;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+}
+
+#progress-container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 10vh;
+  background-color: #f4f4f4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+#progress-bar {
+  width: 80%;
+  height: 20px;
+  background-color: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+#progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+#level-indicator {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.game-area {
+  width: 100%;
+  height: 80%; /* Leave room for instructions and progress bar */
+  position: relative;
+  margin-top: 10vh; /* Space for instructions */
+  overflow: hidden;
+}
+
+#level-progress-container {
+  position: fixed;
+  top: 50px;
+  right: 20px;
+  width: 150px;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  z-index: 1001;
+}
+
+#level-progress-bar {
+  height: 100%;
+  background-color: #2ecc71;
+  width: 0%;
+  transition: width 0.3s ease-in-out;
+}
+
+#feedback-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animations */
+@keyframes success-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.success-animation {
+  animation: success-pulse 0.5s ease-in-out;
+}
+
+@keyframes level-complete {
+  0% { background-color: #2ecc71; }
+  50% { background-color: #f1c40f; }
+  100% { background-color: #2ecc71; }
+}
+
+.level-complete-animation {
+  animation: level-complete 1s ease-in-out;
+}
+
+/* Ensure word elements have proper styling */
+.word-element {
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 20px;
+  margin: 5px;
+  color: white;
+  font-weight: bold;
+  min-width: 80px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+} 

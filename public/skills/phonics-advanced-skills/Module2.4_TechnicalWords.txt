@@ -1,0 +1,10 @@
+bandwidth
+protocol
+interface
+database
+algorithm
+encryption
+compiler
+processor
+framework
+middleware 

@@ -1,0 +1,13 @@
+# Year 1 Term 2 Week 12
+# More common exception words
+
+was
+is
+his
+has
+I
+you
+your
+they
+be
+he 

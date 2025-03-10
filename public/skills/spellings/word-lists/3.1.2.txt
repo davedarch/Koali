@@ -1,0 +1,13 @@
+# Year 3 Term 1 Week 2
+# Adding suffixes to words of more than one syllable (stressed final syllable)
+
+beginning
+beginner
+forgetting
+forgotten
+preferred
+preferring
+occurred
+occurring
+committed
+committing 

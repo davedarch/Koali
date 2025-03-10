@@ -1,0 +1,20 @@
+kitchen
+bedroom
+bathroom
+living room
+dining room
+hallway
+attic
+basement
+garage
+garden
+playroom
+study
+office
+library
+laundry room
+closet
+pantry
+nursery
+porch
+shed 

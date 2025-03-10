@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>word | koali</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background-color: #f4f4f4;
+      position: relative;
+    }
+
+    #instruction {
+      font-size: 48px;
+      margin-top: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      height: 10vh;
+      width: 100%;
+      background-color: #f4f4f4;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+    }
+
+    #play-icon {
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 48px; /* Ensure the icon is large enough to be visible */
+    }
+
+    .clickable {
+      min-width: 120px;
+      height: 100px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      cursor: pointer;
+      top: 10vh;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      border-radius: 8px;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .clickable-word {
+      margin: 0 5px; /* Add space between words */
+      cursor: pointer;
+      transition: color 0.3s, background-color 0.3s; /* Smooth transition for hover effect */
+    }
+
+    .clickable-word:hover {
+      color: #3498db; /* Change text color on hover */
+      background-color: #e0f7fa; /* Optional: Add background highlight on hover */
+    }
+
+    /* Feedback styles */
+    #feedback-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #feedback-modal {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 300px;
+      z-index: 1000;
+    }
+
+    #feedback-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #feedback-form input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .optional-label {
+      color: #666;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    #feedback-form textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    #feedback-form button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #feedback-form button:hover {
+      background-color: #2980b9;
+    }
+
+    /* Level indicator styles */
+    #level-indicator {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      background-color: #3498db;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 18px;
+      z-index: 1001;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Success animation */
+    @keyframes success-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .success-animation {
+      animation: success-pulse 0.5s ease-in-out;
+    }
+
+    /* Level progress bar */
+    #level-progress-container {
+      position: fixed;
+      top: 50px;
+      right: 20px;
+      width: 150px;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      z-index: 1001;
+    }
+
+    #level-progress-bar {
+      height: 100%;
+      background-color: #2ecc71;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+    
+    /* Level progress indicators */
+    .progress-milestone {
+      position: absolute;
+      width: 2px;
+      height: 10px;
+      background-color: rgba(0, 0, 0, 0.2);
+      z-index: 1002;
+    }
+    
+    /* Level completion animation */
+    @keyframes level-complete {
+      0% { background-color: #2ecc71; }
+      50% { background-color: #f1c40f; }
+      100% { background-color: #2ecc71; }
+    }
+    
+    .level-complete-animation {
+      animation: level-complete 1s ease-in-out;
+    }
+
+    .incorrect-click {
+      animation: incorrect-shake 0.5s ease-in-out;
+    }
+
+    @keyframes incorrect-shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="instruction">Click the word that is...</div>
+  
+  <div id="level-indicator">Level 1</div>
+  
+  <div id="level-progress-container">
+    <div id="level-progress-bar"></div>
+  </div>
+  
+  <!-- Create clickable elements -->
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  <div class="clickable" data-category=""></div>
+  
+  <button id="feedback-button">
+    <i class="fas fa-comment"></i>
+  </button>
+  
+  <div id="feedback-modal">
+    <form id="feedback-form">
+      <input type="text" placeholder="Your name">
+      <input type="email" placeholder="Your email"><span class="optional-label">(optional)</span>
+      <textarea placeholder="Share your feedback or report an issue..."></textarea>
+      <button type="submit">Send Feedback</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get all clickable elements
+      const clickables = document.querySelectorAll('.clickable');
+      const playIcon = document.getElementById('play-icon');
+      const instructionElement = document.getElementById('instruction');
+      const levelIndicator = document.getElementById('level-indicator');
+      const levelProgressBar = document.getElementById('level-progress-bar');
+      
+      // Level system variables
+      let currentLevel = parseInt(localStorage.getItem('wordGameLevel')) || 1;
+      const maxLevel = 5; // Maximum level
+      let correctClickable;
+      let activeClickables = [];
+      
+      // Track progress for current level (0-100)
+      let levelProgress = parseInt(localStorage.getItem('wordGameProgress')) || 0;
+      let startTime; // To track time for each attempt
+      
+      // Update level display
+      updateLevelDisplay();
+      updateProgressBar();
+
+      // Colors for word boxes
+      const colors = [
+        '#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6',
+        '#1abc9c', '#e67e22', '#34495e', '#27ae60', '#d35400'
+      ];
+
+      // Available categories
+      const categories = [
+        'animals', 'colors', 'emotions', 'jobs', 'rooms',
+        'countries', 'food', 'clothes', 'vehicles', 'body'
+      ];
+
+      // Category display names (for instructions)
+      const categoryDisplayNames = {
+        'animals': 'an animal',
+        'colors': 'a color',
+        'emotions': 'an emotion',
+        'jobs': 'a job',
+        'rooms': 'a room',
+        'countries': 'a country',
+        'food': 'a food',
+        'clothes': 'an item of clothing',
+        'vehicles': 'a vehicle',
+        'body': 'a body part'
+      };
+
+      // Store loaded word lists
+      const wordLists = {};
+
+      // Function to update the level display
+      function updateLevelDisplay() {
+        levelIndicator.textContent = `Level ${currentLevel}`;
+      }
+
+      // Function to update the progress bar
+      function updateProgressBar() {
+        // Update the progress bar width with animation
+        levelProgressBar.style.width = `${levelProgress}%`;
+      }
+
+      // Function to load word lists
+      async function loadWordLists() {
+        for (const category of categories) {
+          try {
+            const response = await fetch(`/skills/words/${category}.txt`);
+            if (!response.ok) {
+              throw new Error(`Failed to load ${category} word list`);
+            }
+            const text = await response.text();
+            wordLists[category] = text.split('\n').map(word => word.trim()).filter(word => word.length > 0);
+            console.log(`Loaded ${wordLists[category].length} words for ${category}`);
+          } catch (error) {
+            console.error(`Error loading ${category} word list:`, error);
+            wordLists[category] = [];
+          }
+        }
+      }
+
+      // Function to generate random positions, avoiding the top 10% of the screen
+      const randomPosition = (element) => {
+        const maxX = window.innerWidth - element.offsetWidth;
+        const maxY = window.innerHeight - element.offsetHeight - (window.innerHeight * 0.1);
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY) + (window.innerHeight * 0.1);
+        element.style.left = `${randomX}px`;
+        element.style.top = `${randomY}px`;
+      };
+
+      // Function to check if two elements overlap
+      const checkOverlap = (rect1, rect2, margin = 10) => {
+        return !(
+          rect1.right + margin < rect2.left ||
+          rect1.left > rect2.right + margin ||
+          rect1.bottom + margin < rect2.top ||
+          rect1.top > rect2.bottom + margin
+        );
+      };
+
+      // Function to position shapes without overlap
+      const positionWithoutOverlap = (element, activeElements, maxAttempts = 50) => {
+        let attempts = 0;
+        let overlapping = true;
+        
+        while (overlapping && attempts < maxAttempts) {
+          randomPosition(element);
+          overlapping = false;
+          
+          const elementRect = element.getBoundingClientRect();
+          
+          for (const otherElement of activeElements) {
+            if (element !== otherElement && otherElement.style.opacity !== '0') {
+              const otherRect = otherElement.getBoundingClientRect();
+              if (checkOverlap(elementRect, otherRect)) {
+                overlapping = true;
+                break;
+              }
+            }
+          }
+          
+          attempts++;
+        }
+        
+        return !overlapping;
+      };
+
+      // Function to set up the game based on current level
+      async function setupGame() {
+        // Make sure word lists are loaded
+        if (Object.keys(wordLists).length === 0) {
+          await loadWordLists();
+        }
+        
+        // Start timing this attempt
+        startTime = Date.now();
+        
+        // Reset all clickables
+        clickables.forEach(clickable => {
+          clickable.style.opacity = '0';
+          clickable.textContent = '';
+          clickable.dataset.category = '';
+        });
+
+        // Determine how many words to show based on level
+        const wordsToShow = Math.min(currentLevel + 1, clickables.length);
+        
+        // Randomly select which clickables to show
+        activeClickables = Array.from(clickables)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, wordsToShow);
+        
+        // Choose a random category for the correct answer
+        const targetCategory = categories[Math.floor(Math.random() * categories.length)];
+        
+        // Make sure the target category has words
+        if (!wordLists[targetCategory] || wordLists[targetCategory].length === 0) {
+          console.error(`No words available for category: ${targetCategory}`);
+          return;
+        }
+        
+        // Choose a random word from the target category
+        const targetWord = wordLists[targetCategory][Math.floor(Math.random() * wordLists[targetCategory].length)];
+        
+        // Set the first clickable as the correct one
+        correctClickable = activeClickables[0];
+        correctClickable.textContent = targetWord;
+        correctClickable.dataset.category = targetCategory;
+        correctClickable.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Fill the rest with random words from other categories
+        for (let i = 1; i < activeClickables.length; i++) {
+          const clickable = activeClickables[i];
+          
+          // Choose a random category different from the target
+          let otherCategories = categories.filter(cat => cat !== targetCategory);
+          const randomCategory = otherCategories[Math.floor(Math.random() * otherCategories.length)];
+          
+          // Make sure the category has words
+          if (!wordLists[randomCategory] || wordLists[randomCategory].length === 0) {
+            continue;
+          }
+          
+          // Choose a random word from this category
+          const randomWord = wordLists[randomCategory][Math.floor(Math.random() * wordLists[randomCategory].length)];
+          
+          clickable.textContent = randomWord;
+          clickable.dataset.category = randomCategory;
+          clickable.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Make all active clickables visible
+        activeClickables.forEach(clickable => {
+          clickable.style.opacity = '1';
+        });
+        
+        // Position clickables without overlap
+        activeClickables.forEach(clickable => {
+          positionWithoutOverlap(clickable, activeClickables);
+        });
+        
+        // Shuffle the clickables to randomize the position of the correct one
+        shuffleClickables(activeClickables);
+        
+        // Update instruction text with clickable words
+        const instructionText = `Click the word that is ${categoryDisplayNames[targetCategory]}`;
+        const words = instructionText.split(' ');
+        instructionElement.innerHTML = words.map(word => 
+          `<span class="clickable-word">${word}</span>`
+        ).join(' ') + ' <i id="play-icon" class="fas fa-play-circle"></i>';
+        
+        // Add event listeners to each word
+        document.querySelectorAll('.clickable-word').forEach(span => {
+          span.addEventListener('click', () => {
+            const utterance = new SpeechSynthesisUtterance(span.textContent);
+            utterance.rate = 0.75; // Set a slightly slower rate if needed
+            window.speechSynthesis.speak(utterance);
+          });
+        });
+        
+        // Update the click handler for the play icon
+        document.getElementById('play-icon').addEventListener('click', () => {
+          let delay = 0;
+          
+          words.forEach((word, index) => {
+            setTimeout(() => {
+              const utterance = new SpeechSynthesisUtterance(word);
+              utterance.rate = 0.75; // Set a slightly slower rate if needed
+              window.speechSynthesis.speak(utterance);
+            }, delay);
+            
+            // Increase delay for the next word
+            delay += 500; // 500ms pause between words
+          });
+        });
+        
+        // Add click event listeners to active clickables
+        activeClickables.forEach(clickable => {
+          clickable.addEventListener('click', handleClickableClick);
+        });
+      }
+
+      // Function to shuffle the clickables array
+      function shuffleClickables(array) {
+        // Create a copy of the array with positions
+        const positions = array.map(el => {
+          return {
+            element: el,
+            left: el.style.left,
+            top: el.style.top
+          };
+        });
+        
+        // Shuffle the positions
+        for (let i = positions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+        
+        // Apply the shuffled positions
+        positions.forEach((pos, index) => {
+          array[index].style.left = pos.left;
+          array[index].style.top = pos.top;
+        });
+      }
+
+      // Handle clickable click event
+      function handleClickableClick(event) {
+        const clickable = event.currentTarget;
+        const endTime = Date.now();
+        const timeTaken = (endTime - startTime) / 1000; // Convert to seconds
+        
+        if (clickable === correctClickable) {
+          // Remove any existing animation classes first to ensure animation replays
+          clickable.classList.remove('success-animation');
+          
+          // Force a reflow to ensure the animation restarts
+          void clickable.offsetWidth;
+          
+          // Success! Add success animation
+          clickable.classList.add('success-animation');
+          
+          // Calculate progress increase based on time taken
+          // Faster clicks = more progress
+          let progressIncrease = 20; // Base progress
+          
+          // Adjust based on time (faster = more progress, up to +10%)
+          if (timeTaken < 1) {
+            progressIncrease += 10;
+          } else if (timeTaken < 2) {
+            progressIncrease += 5;
+          }
+          
+          // Increase level progress
+          levelProgress += progressIncrease;
+          localStorage.setItem('wordGameProgress', levelProgress);
+          
+          // Update progress bar
+          updateProgressBar();
+          
+          // Check if level is complete
+          if (levelProgress >= 100) {
+            // Level complete animation
+            levelProgressBar.classList.add('level-complete-animation');
+            
+            // Reset progress for next level
+            levelProgress = 0;
+            localStorage.setItem('wordGameProgress', levelProgress);
+            
+            // Increase level
+            currentLevel++;
+            
+            // Check if we've completed all levels
+            if (currentLevel <= maxLevel) {
+              // Save level state
+              localStorage.setItem('wordGameLevel', currentLevel);
+              
+              // Update level display
+              updateLevelDisplay();
+              
+              // Remove level completion animation after a delay
+              setTimeout(() => {
+                levelProgressBar.classList.remove('level-complete-animation');
+              }, 1000);
+            } else {
+              // If we've completed the final level, show a completion message and redirect to home
+              showCompletionMessage();
+              return; // Exit the function early to prevent setting up a new game
+            }
+          }
+          
+          // Remove event listeners to prevent multiple clicks
+          activeClickables.forEach(clickable => {
+            clickable.removeEventListener('click', handleClickableClick);
+          });
+          
+          // Set up next round after a short delay
+          setTimeout(() => {
+            // Remove animation classes before setting up new game
+            clickables.forEach(clickable => {
+              clickable.classList.remove('success-animation', 'incorrect-click');
+            });
+            
+            setupGame();
+            // Update progress bar after setup to reflect new level
+            updateProgressBar();
+          }, 1000);
+        } else {
+          // Incorrect click - small penalty to progress (5%)
+          levelProgress = Math.max(0, levelProgress - 5);
+          localStorage.setItem('wordGameProgress', levelProgress);
+          
+          // Update progress bar
+          updateProgressBar();
+          
+          // Remove any existing animation class first
+          clickable.classList.remove('incorrect-click');
+          
+          // Force a reflow to ensure the animation restarts
+          void clickable.offsetWidth;
+          
+          // Add a visual indication that this was an incorrect click
+          clickable.classList.add('incorrect-click');
+          
+          // Remove the visual indication after a short delay
+          setTimeout(() => {
+            clickable.classList.remove('incorrect-click');
+          }, 500);
+        }
+      }
+
+      // Reset button (for testing) - double click on level indicator
+      levelIndicator.addEventListener('dblclick', () => {
+        localStorage.setItem('wordGameLevel', 1);
+        localStorage.setItem('wordGameProgress', 0);
+        currentLevel = 1;
+        levelProgress = 0;
+        updateLevelDisplay();
+        updateProgressBar();
+        setupGame();
+      });
+
+      // Initialize the game
+      setupGame();
+
+      // Feedback functionality
+      const feedbackButton = document.getElementById('feedback-button');
+      const feedbackModal = document.getElementById('feedback-modal');
+      const feedbackForm = document.getElementById('feedback-form');
+
+      feedbackButton.addEventListener('click', () => {
+        feedbackModal.style.display = feedbackModal.style.display === 'none' ? 'block' : 'none';
+      });
+
+      feedbackForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const feedback = feedbackForm.querySelector('textarea').value;
+        const name = feedbackForm.querySelector('input[type="text"]').value;
+        const email = feedbackForm.querySelector('input[type="email"]').value;
+        
+        try {
+          if (!feedback.trim()) {
+            throw new Error('Please enter some feedback before submitting');
+          }
+
+          // First save to local server
+          const response = await fetch('/submit-feedback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              feedback,
+              name,
+              email
+            })
+          });
+
+          const data = await response.json();
+          
+          if (response.ok) {
+            alert('Thank you for your feedback!');
+            feedbackForm.querySelector('textarea').value = '';
+            feedbackForm.querySelector('input[type="text"]').value = '';
+            feedbackForm.querySelector('input[type="email"]').value = '';
+            feedbackModal.style.display = 'none';
+          } else {
+            throw new Error(data.error || 'Failed to submit feedback');
+          }
+        } catch (error) {
+          console.error('Detailed error:', error);
+          
+          // Create a more user-friendly error message
+          let userMessage = 'Sorry, there was an error submitting your feedback: ';
+          
+          if (error.message.includes('Failed to fetch')) {
+            userMessage += 'Network error - please check your internet connection.';
+          } else if (error.message.includes('API Error')) {
+            userMessage += error.message;
+          } else {
+            userMessage += error.message;
+          }
+          
+          alert(userMessage);
+        }
+      });
+
+      // Close modal when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!feedbackModal.contains(e.target) && e.target !== feedbackButton) {
+          feedbackModal.style.display = 'none';
+        }
+      });
+
+      // Function to show completion message and redirect to home
+      function showCompletionMessage() {
+        // Create a completion overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '2000';
+        
+        // Create congratulations message
+        const message = document.createElement('h1');
+        message.textContent = 'Congratulations!';
+        message.style.color = 'white';
+        message.style.fontSize = '3rem';
+        message.style.marginBottom = '20px';
+        message.style.textAlign = 'center';
+        
+        // Create sub-message
+        const subMessage = document.createElement('p');
+        subMessage.textContent = 'You have completed all levels of the Word Categories skill!';
+        subMessage.style.color = 'white';
+        subMessage.style.fontSize = '1.5rem';
+        subMessage.style.marginBottom = '30px';
+        subMessage.style.textAlign = 'center';
+        
+        // Create home button
+        const homeButton = document.createElement('button');
+        homeButton.textContent = 'Return to Home';
+        homeButton.style.padding = '15px 30px';
+        homeButton.style.fontSize = '1.2rem';
+        homeButton.style.backgroundColor = '#3498db';
+        homeButton.style.color = 'white';
+        homeButton.style.border = 'none';
+        homeButton.style.borderRadius = '30px';
+        homeButton.style.cursor = 'pointer';
+        homeButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        
+        // Add hover effect
+        homeButton.onmouseover = () => {
+          homeButton.style.backgroundColor = '#2980b9';
+        };
+        homeButton.onmouseout = () => {
+          homeButton.style.backgroundColor = '#3498db';
+        };
+        
+        // Add click event to redirect to home
+        homeButton.onclick = () => {
+          // Reset game state before redirecting
+          localStorage.setItem('wordGameLevel', 1);
+          localStorage.setItem('wordGameProgress', 0);
+          
+          // Redirect to home page
+          window.location.href = '/';
+        };
+        
+        // Add elements to overlay
+        overlay.appendChild(message);
+        overlay.appendChild(subMessage);
+        overlay.appendChild(homeButton);
+        
+        // Add overlay to body
+        document.body.appendChild(overlay);
+        
+        // Add confetti effect
+        createConfetti();
+      }
+      
+      // Function to create confetti effect
+      function createConfetti() {
+        const confettiCount = 200;
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+        
+        for (let i = 0; i < confettiCount; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.position = 'absolute';
+          confetti.style.left = `${Math.random() * 100}%`;
+          confetti.style.top = '0%';
+          confetti.style.width = '10px';
+          confetti.style.height = '10px';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.borderRadius = '50%';
+          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+          confetti.style.animation = `confetti-fall ${Math.random() * 10 + 5}s linear`;
+          document.body.appendChild(confetti);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

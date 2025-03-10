@@ -1,0 +1,14 @@
+sound
+shout
+brown
+clown
+boy
+toy
+coin
+join
+head
+bread
+key
+monkey
+happy
+funny

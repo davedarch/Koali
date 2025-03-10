@@ -1,0 +1,13 @@
+# Year 6 Term 3 Week 7
+# Words from computing and technology
+
+algorithm
+programming
+debugging
+variable
+sequence
+repetition
+selection
+database
+spreadsheet
+encryption 

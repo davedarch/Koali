@@ -1,0 +1,13 @@
+# Year 1 Term 1 Week 12
+# Common exception words
+
+the
+a
+do
+to
+today
+of
+said
+says
+are
+were 

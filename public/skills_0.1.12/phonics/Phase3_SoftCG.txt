@@ -1,0 +1,10 @@
+cent
+city
+cycle
+face
+place
+mice
+giraffe
+giant
+gem
+gym

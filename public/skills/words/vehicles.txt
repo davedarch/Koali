@@ -1,0 +1,20 @@
+car
+bus
+train
+plane
+bike
+boat
+ship
+truck
+tractor
+helicopter
+motorcycle
+scooter
+ambulance
+fire engine
+taxi
+rocket
+submarine
+tram
+van
+lorry 

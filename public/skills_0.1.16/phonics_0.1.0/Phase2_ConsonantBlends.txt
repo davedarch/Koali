@@ -1,0 +1,14 @@
+blue
+black
+stair
+step
+train
+trap
+drip
+drop
+spin
+spot
+green
+grass
+plant
+plane

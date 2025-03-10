@@ -1,0 +1,10 @@
+cat
+dog
+sun
+hat
+pen
+log
+cup
+net
+pig
+mop

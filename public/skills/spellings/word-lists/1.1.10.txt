@@ -1,0 +1,13 @@
+# Year 1 Term 1 Week 10
+# Adding -s
+
+cats
+dogs
+runs
+jumps
+sits
+hops
+gets
+pens
+bags
+hats 

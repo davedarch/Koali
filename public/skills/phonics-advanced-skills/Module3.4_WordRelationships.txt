@@ -1,0 +1,10 @@
+synonym
+antonym
+homophone
+homograph
+homonym
+connotation
+denotation
+analogy
+etymology
+morphology 

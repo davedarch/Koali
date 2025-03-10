@@ -1,0 +1,10 @@
+bank
+spring
+light
+fair
+fine
+right
+mean
+bear
+present
+wound 
