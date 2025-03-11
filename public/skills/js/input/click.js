@@ -1,177 +1,132 @@
 class ClickInputMethod extends InputMethod {
   constructor(options = {}) {
     super(options);
-    this.clickables = [];
-    this.correctClickable = null;
-    this.correctClickables = [];
-    this.mode = 'single'; // Default mode
-    this.selectedElements = new Set(); // Track selected elements in 'all' mode
+    this.activeElements = [];
+    this.selectedElements = new Set();
   }
   
-  setupEventListeners() {
-    this.container.addEventListener('click', this.handleClick.bind(this));
-  }
-  
-  handleClick(event) {
-    if (!this.active) return;
+  setupForChallenge(challengeData) {
+    super.setupForChallenge(challengeData);
     
-    console.log('Click detected, mode:', this.mode);
+    this.activeElements = [];
+    this.selectedElements.clear();
     
-    // Check if a clickable element was clicked
-    const clickedElement = event.target.closest('.clickable');
-    if (clickedElement) {
-      console.log('Clickable element clicked:', clickedElement.textContent || clickedElement.dataset.shape);
+    // Add click functionality to elements
+    challengeData.elements.forEach(element => {
+      // Add clickable class
+      element.classList.add('clickable');
       
-      // Prevent double-clicks
-      event.preventDefault();
+      // Add click listener
+      const clickHandler = (e) => {
+        // Prevent default behavior
+        e.preventDefault();
+        
+        // Handle the click
+        this.handleClick(element);
+      };
       
-      // Handle based on mode
-      if (this.mode === 'single') {
-        this.handleSingleClick(clickedElement);
-      } else if (this.mode === 'all') {
-        this.handleMultiClick(clickedElement);
+      // Store the handler to remove it later
+      element._clickHandler = clickHandler;
+      
+      // Add the event listener
+      element.addEventListener('click', clickHandler);
+      
+      // Add to active elements
+      this.activeElements.push(element);
+    });
+    
+    // Make elements speak their attributes when clicked
+    challengeData.elements.forEach(element => {
+      const game = challengeData.game || window.game;
+      if (game && game.speechService) {
+        let speakText = '';
+        if (element.dataset.color && element.dataset.shape) {
+          speakText = `${element.dataset.color} ${element.dataset.shape}`;
+        } else if (element.textContent) {
+          speakText = element.textContent;
+        }
+        
+        if (speakText) {
+          // This is added in addition to (not replacing) the click handler
+          element.addEventListener('speechclick', () => {
+            game.speechService.speak(speakText);
+          });
+          
+          // Save original click handler if exists
+          const originalClickHandler = element.onclick;
+          
+          // Create new click handler that speaks and then calls original handler
+          element.onclick = (e) => {
+            element.dispatchEvent(new CustomEvent('speechclick'));
+            if (typeof originalClickHandler === 'function') {
+              originalClickHandler.call(element, e);
+            }
+          };
+        }
       }
+    });
+    
+    // Modify instruction if needed
+    if (challengeData.instruction) {
+      challengeData.instruction = this.modifyInstructionForInput(challengeData.instruction);
     }
   }
   
-  handleSingleClick(clickedElement) {
-    // Check if correct element was clicked
-    if (clickedElement === this.correctClickable) {
-      // Correct action
-      clickedElement.classList.add('success-animation');
-      this.onCorrectAction({
-        element: clickedElement,
-        timeTaken: 0 // Could implement timing here
-      });
+  handleClick(element) {
+    const isCorrect = this.validateInteraction(element);
+    
+    if (isCorrect) {
+      // Add success animation
+      element.classList.add('success-animation');
+      
+      // For multi-select challenges
+      if (this.challengeData.mode === 'all') {
+        // Add to selected elements
+        this.selectedElements.add(element);
+        
+        // Check if all correct elements are selected
+        const allSelected = this.challengeData.correctElements.every(el => 
+          this.selectedElements.has(el)
+        );
+        
+        if (allSelected) {
+          // All correct elements have been selected
+          this.triggerEvent('correct', { element });
+        }
+      } else {
+        // For single-select challenges
+        this.triggerEvent('correct', { element });
+      }
     } else {
-      // Incorrect action
-      clickedElement.classList.add('incorrect-click');
+      // Add incorrect animation
+      element.classList.add('incorrect-click');
+      
+      // Remove after animation completes
       setTimeout(() => {
-        clickedElement.classList.remove('incorrect-click');
+        element.classList.remove('incorrect-click');
       }, 500);
       
-      this.onIncorrectAction({
-        element: clickedElement,
-        correctElement: this.correctClickable
-      });
-    }
-  }
-  
-  handleMultiClick(clickedElement) {
-    console.log('Processing in all mode');
-    
-    // Check if already selected
-    const isSelected = this.selectedElements.has(clickedElement);
-    console.log('Is already selected:', isSelected);
-    
-    if (isSelected) {
-      // Deselect
-      this.selectedElements.delete(clickedElement);
-      clickedElement.classList.remove('selected');
-    } else {
-      // Select
-      this.selectedElements.add(clickedElement);
-      clickedElement.classList.add('selected');
-    }
-    
-    console.log('Selected elements count:', this.selectedElements.size);
-    
-    // Auto-check after a short delay
-    clearTimeout(this.checkTimeout);
-    this.checkTimeout = setTimeout(() => {
-      this.checkAllSelections();
-    }, 500);
-  }
-  
-  checkAllSelections() {
-    console.log('Auto-checking selections...');
-    
-    // Convert sets to arrays for easier logging
-    const selectedArray = Array.from(this.selectedElements).map(el => el.textContent || el.dataset.shape);
-    const correctArray = this.correctClickables.map(el => el.textContent || el.dataset.shape);
-    
-    console.log('Selected:', selectedArray);
-    console.log('Correct:', correctArray);
-    
-    // Check if all correct elements are selected and no incorrect ones
-    const allCorrectSelected = this.correctClickables.every(el => 
-      this.selectedElements.has(el)
-    );
-    
-    const noIncorrectSelected = Array.from(this.selectedElements).every(el => 
-      this.correctClickables.includes(el)
-    );
-    
-    if (allCorrectSelected && noIncorrectSelected) {
-      console.log('All correct elements selected!');
-      
-      // Add success animation to all selected elements
-      this.selectedElements.forEach(el => {
-        el.classList.add('success-animation');
-      });
-      
-      this.onCorrectAction({
-        elements: Array.from(this.selectedElements)
-      });
-    } else if (allCorrectSelected) {
-      console.log('All correct elements selected, but some incorrect ones too');
-      this.onIncorrectAction({
-        message: 'You selected some incorrect items'
-      });
-    } else {
-      console.log('Not all correct elements selected yet');
-      
-      // If they've selected some but not all, give a hint
-      if (this.selectedElements.size > 0 && 
-          this.selectedElements.size < this.correctClickables.length) {
-        console.log('Hint: There are more to find!');
-      }
-    }
-  }
-  
-  setupForChallenge(challenge) {
-    super.setupForChallenge(challenge);
-    
-    // Clean up previous state
-    this.cleanup();
-    
-    // Determine mode based on challenge
-    this.mode = challenge.mode || 'single';
-    console.log('Setting up click input with mode:', this.mode);
-    
-    if (this.mode === 'single') {
-      // Single selection mode
-      this.correctClickable = challenge.correctElement;
-      
-      // Make all elements clickable
-      challenge.elements.forEach(element => {
-        element.classList.add('clickable');
-        this.clickables.push(element);
-      });
-    } else if (this.mode === 'all') {
-      // Multi-selection mode
-      this.correctClickables = challenge.correctElements || [];
-      console.log('Correct elements:', this.correctClickables.length);
-      
-      // Make all elements clickable
-      challenge.elements.forEach(element => {
-        element.classList.add('clickable');
-        this.clickables.push(element);
-      });
+      // Trigger incorrect event
+      this.triggerEvent('incorrect', { element });
     }
   }
   
   cleanup() {
-    // Remove clickable class and event listeners from elements
-    this.clickables.forEach(element => {
-      if (element) {
-        element.classList.remove('clickable', 'selected', 'success-animation', 'incorrect-click');
+    // Remove all event listeners
+    this.activeElements.forEach(element => {
+      if (element._clickHandler) {
+        element.removeEventListener('click', element._clickHandler);
+        delete element._clickHandler;
       }
+      element.classList.remove('clickable', 'success-animation', 'incorrect-click');
     });
     
-    this.clickables = [];
-    this.correctClickable = null;
-    this.correctClickables = [];
-    this.selectedElements = new Set();
+    this.activeElements = [];
+    this.selectedElements.clear();
+  }
+  
+  modifyInstructionForInput(instruction) {
+    // No need to modify for click, as "Click on..." is already correct
+    return instruction;
   }
 } 

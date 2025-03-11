@@ -358,6 +358,40 @@
         justify-content: center;
       }
     }
+    
+    /* New styles for challenge options */
+    .challenge-options {
+      margin: 15px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .challenge-option {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background-color: rgba(59, 130, 246, 0.05);
+      transition: all var(--transition-speed);
+      cursor: pointer;
+    }
+    
+    .challenge-option:hover {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .challenge-option-icon {
+      color: var(--primary-color);
+      margin-right: 10px;
+      font-size: 0.875rem;
+    }
+    
+    .challenge-option-label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
@@ -384,11 +418,11 @@
         </div>
       </div>
       
-      <h2 class="section-title">Available Skills</h2>
+      <h2 class="section-title">Select a skill to start learning</h2>
       <p class="section-subtitle">Select a skill to begin your training journey</p>
       
       <div class="skills-container">
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=basic'">
+        <div class="skill-card">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
               <i class="fas fa-mouse-pointer"></i>
@@ -397,6 +431,25 @@
           </div>
           <div class="skill-card-body">
             <p class="skill-description">Improve your clicking accuracy and speed through interactive exercises designed for precision.</p>
+            
+            <div class="challenge-options">
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=click&challenge=basic'">
+                <span class="challenge-option-icon"><i class="fas fa-shapes"></i></span>
+                <span class="challenge-option-label">Shapes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=click&challenge=size'">
+                <span class="challenge-option-icon"><i class="fas fa-ruler"></i></span>
+                <span class="challenge-option-label">Sizes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=click&challenge=number'">
+                <span class="challenge-option-icon"><i class="fas fa-hashtag"></i></span>
+                <span class="challenge-option-label">Numbers</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=click&challenge=word'">
+                <span class="challenge-option-icon"><i class="fas fa-book"></i></span>
+                <span class="challenge-option-label">Words</span>
+              </div>
+            </div>
             
             <div class="skill-meta">
               <div class="meta-item">
@@ -416,12 +469,10 @@
             <div class="progress-container">
               <div class="progress-bar"></div>
             </div>
-            
-            <a href="/skills/game.html?input=click&challenge=basic" class="start-button">Start Training</a>
           </div>
         </div>
         
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=drag&challenge=basic'">
+        <div class="skill-card">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
               <i class="fas fa-arrows-alt"></i>
@@ -430,6 +481,25 @@
           </div>
           <div class="skill-card-body">
             <p class="skill-description">Master drag and drop interactions with exercises that improve fine motor control and spatial awareness.</p>
+            
+            <div class="challenge-options">
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=drag&challenge=basic'">
+                <span class="challenge-option-icon"><i class="fas fa-shapes"></i></span>
+                <span class="challenge-option-label">Shapes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=drag&challenge=size'">
+                <span class="challenge-option-icon"><i class="fas fa-ruler"></i></span>
+                <span class="challenge-option-label">Sizes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=drag&challenge=number'">
+                <span class="challenge-option-icon"><i class="fas fa-hashtag"></i></span>
+                <span class="challenge-option-label">Numbers</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=drag&challenge=word'">
+                <span class="challenge-option-icon"><i class="fas fa-book"></i></span>
+                <span class="challenge-option-label">Words</span>
+              </div>
+            </div>
             
             <div class="skill-meta">
               <div class="meta-item">
@@ -449,20 +519,37 @@
             <div class="progress-container">
               <div class="progress-bar"></div>
             </div>
-            
-            <a href="/skills/game.html?input=drag&challenge=basic" class="start-button">Start Training</a>
           </div>
         </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=number'">
+
+        <div class="skill-card">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
-              <i class="fas fa-hashtag"></i>
+              <i class="fas fa-sort-numeric-up"></i>
             </div>
-            <h3 class="skill-title">Numbers</h3>
+            <h3 class="skill-title">Sequence</h3>
           </div>
           <div class="skill-card-body">
-            <p class="skill-description">Improve math skills by selecting the correct numbers.</p>
+            <p class="skill-description">Improve sequencing skills by arranging items in the correct order based on numbers, patterns or logic.</p>
+            
+            <div class="challenge-options">
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=sequence&challenge=basic'">
+                <span class="challenge-option-icon"><i class="fas fa-shapes"></i></span>
+                <span class="challenge-option-label">Shapes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=sequence&challenge=size'">
+                <span class="challenge-option-icon"><i class="fas fa-ruler"></i></span>
+                <span class="challenge-option-label">Sizes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=sequence&challenge=number'">
+                <span class="challenge-option-icon"><i class="fas fa-hashtag"></i></span>
+                <span class="challenge-option-label">Numbers</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=sequence&challenge=word'">
+                <span class="challenge-option-icon"><i class="fas fa-book"></i></span>
+                <span class="challenge-option-label">Words</span>
+              </div>
+            </div>
             
             <div class="skill-meta">
               <div class="meta-item">
@@ -474,7 +561,7 @@
                 <span class="meta-label">Exercises</span>
               </div>
               <div class="meta-item">
-                <span class="meta-value">10</span>
+                <span class="meta-value">15</span>
                 <span class="meta-label">Minutes</span>
               </div>
             </div>
@@ -482,20 +569,37 @@
             <div class="progress-container">
               <div class="progress-bar"></div>
             </div>
-            
-            <a href="/skills/game.html?input=click&challenge=number" class="start-button">Start Training</a>
           </div>
         </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=size'">
+
+        <div class="skill-card">
           <div class="skill-card-header">
             <div class="skill-icon-wrapper">
-              <i class="fas fa-ruler"></i>
+              <i class="fas fa-check-square"></i>
             </div>
-            <h3 class="skill-title">Sizes</h3>
+            <h3 class="skill-title">Select</h3>
           </div>
           <div class="skill-card-body">
-            <p class="skill-description">Learn about different sizes by clicking on the correct objects.</p>
+            <p class="skill-description">Practice selection skills by choosing multiple items based on specific criteria or patterns.</p>
+            
+            <div class="challenge-options">
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=select&challenge=basic'">
+                <span class="challenge-option-icon"><i class="fas fa-shapes"></i></span>
+                <span class="challenge-option-label">Shapes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=select&challenge=size'">
+                <span class="challenge-option-icon"><i class="fas fa-ruler"></i></span>
+                <span class="challenge-option-label">Sizes</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=select&challenge=number'">
+                <span class="challenge-option-icon"><i class="fas fa-hashtag"></i></span>
+                <span class="challenge-option-label">Numbers</span>
+              </div>
+              <div class="challenge-option" onclick="window.location.href='/skills/game.html?input=select&challenge=word'">
+                <span class="challenge-option-icon"><i class="fas fa-book"></i></span>
+                <span class="challenge-option-label">Words</span>
+              </div>
+            </div>
             
             <div class="skill-meta">
               <div class="meta-item">
@@ -507,7 +611,7 @@
                 <span class="meta-label">Exercises</span>
               </div>
               <div class="meta-item">
-                <span class="meta-value">10</span>
+                <span class="meta-value">12</span>
                 <span class="meta-label">Minutes</span>
               </div>
             </div>
@@ -515,74 +619,6 @@
             <div class="progress-container">
               <div class="progress-bar"></div>
             </div>
-            
-            <a href="/skills/game.html?input=click&challenge=size" class="start-button">Start Training</a>
-          </div>
-        </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=word'">
-          <div class="skill-card-header">
-            <div class="skill-icon-wrapper">
-              <i class="fas fa-book"></i>
-            </div>
-            <h3 class="skill-title">Words</h3>
-          </div>
-          <div class="skill-card-body">
-            <p class="skill-description">Enhance vocabulary by identifying words in different categories.</p>
-            
-            <div class="skill-meta">
-              <div class="meta-item">
-                <span class="meta-value">5</span>
-                <span class="meta-label">Levels</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">15</span>
-                <span class="meta-label">Exercises</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">10</span>
-                <span class="meta-label">Minutes</span>
-              </div>
-            </div>
-            
-            <div class="progress-container">
-              <div class="progress-bar"></div>
-            </div>
-            
-            <a href="/skills/game.html?input=click&challenge=word" class="start-button">Start Training</a>
-          </div>
-        </div>
-        
-        <div class="skill-card" onclick="window.location.href='/skills/game.html?input=click&challenge=spelling'">
-          <div class="skill-card-header">
-            <div class="skill-icon-wrapper">
-              <i class="fas fa-spell-check"></i>
-            </div>
-            <h3 class="skill-title">Spelling</h3>
-          </div>
-          <div class="skill-card-body">
-            <p class="skill-description">Practice spelling by selecting letters in the correct order.</p>
-            
-            <div class="skill-meta">
-              <div class="meta-item">
-                <span class="meta-value">5</span>
-                <span class="meta-label">Levels</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">15</span>
-                <span class="meta-label">Exercises</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-value">10</span>
-                <span class="meta-label">Minutes</span>
-              </div>
-            </div>
-            
-            <div class="progress-container">
-              <div class="progress-bar"></div>
-            </div>
-            
-            <a href="/skills/game.html?input=click&challenge=spelling" class="start-button">Start Training</a>
           </div>
         </div>
       </div>
@@ -601,13 +637,6 @@
       <p class="copyright">&copy; 2023 Koali Learning. All rights reserved.</p>
     </div>
   </footer>
-</body>
-</html>
-
-</body>
-</html>
-
-</html>
 </body>
 </html>
 

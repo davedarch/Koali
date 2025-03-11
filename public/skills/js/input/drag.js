@@ -1,261 +1,331 @@
 class DragInputMethod extends InputMethod {
   constructor(options = {}) {
     super(options);
-    this.draggables = [];
-    this.correctTarget = null;
-    this.correctTargets = [];
-    this.mode = 'single';
-    this.draggedElement = null;
-    this.dropTargets = [];
-    this.selectedElements = new Set();
+    this.activeElements = [];
+    this.dropTarget = null;
+    this.isDragging = false;
+    this.currentDragElement = null;
   }
   
-  setupEventListeners() {
-    this.container.addEventListener('mousedown', this.handleDragStart.bind(this));
-    this.container.addEventListener('mousemove', this.handleDragMove.bind(this));
-    this.container.addEventListener('mouseup', this.handleDragEnd.bind(this));
+  setupForChallenge(challengeData) {
+    super.setupForChallenge(challengeData);
     
-    // Touch support
-    this.container.addEventListener('touchstart', this.handleDragStart.bind(this));
-    this.container.addEventListener('touchmove', this.handleDragMove.bind(this));
-    this.container.addEventListener('touchend', this.handleDragEnd.bind(this));
-  }
-  
-  handleDragStart(event) {
-    if (!this.active) return;
+    this.activeElements = [];
     
-    // Prevent default for touch events
-    if (event.type === 'touchstart') {
-      event.preventDefault();
+    // Create drop target
+    this.createDropTarget();
+    
+    // Add drag functionality to elements
+    challengeData.elements.forEach(element => {
+      // Add draggable class
+      element.classList.add('draggable');
+      
+      // Make the element draggable
+      element.setAttribute('draggable', 'true');
+      
+      // Drag start event
+      const dragStartHandler = (e) => {
+        this.handleDragStart(e, element);
+      };
+      
+      // Drag end event
+      const dragEndHandler = (e) => {
+        this.handleDragEnd(e, element);
+      };
+      
+      // Store handlers to remove later
+      element._dragStartHandler = dragStartHandler;
+      element._dragEndHandler = dragEndHandler;
+      
+      // Add event listeners
+      element.addEventListener('dragstart', dragStartHandler);
+      element.addEventListener('dragend', dragEndHandler);
+      
+      // For touch devices
+      element.addEventListener('touchstart', (e) => {
+        this.handleTouchStart(e, element);
+      });
+      
+      element.addEventListener('touchmove', (e) => {
+        this.handleTouchMove(e, element);
+      });
+      
+      element.addEventListener('touchend', (e) => {
+        this.handleTouchEnd(e, element);
+      });
+      
+      // Add to active elements
+      this.activeElements.push(element);
+    });
+    
+    // Modify instruction
+    if (challengeData.instruction) {
+      challengeData.instruction = this.modifyInstructionForInput(challengeData.instruction);
     }
+  }
+  
+  createDropTarget() {
+    // Create a drop target
+    this.dropTarget = document.createElement('div');
+    this.dropTarget.className = 'drop-target';
+    this.dropTarget.textContent = 'Drop here';
     
-    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+    // Style the drop target
+    Object.assign(this.dropTarget.style, {
+      width: '150px',
+      height: '150px',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'absolute',
+      borderRadius: '10px',
+      border: '3px dashed #333',
+      backgroundColor: 'rgba(255, 255, 255, 0.2)'
+    });
     
-    const draggable = event.target.closest('.draggable');
-    if (!draggable) return;
+    // Position the drop target
+    this.positionDropTarget();
     
-    // Store reference to dragged element
-    this.draggedElement = draggable;
+    // Add drop events
+    this.dropTarget.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      this.dropTarget.classList.add('highlight');
+    });
+    
+    this.dropTarget.addEventListener('dragleave', () => {
+      this.dropTarget.classList.remove('highlight');
+    });
+    
+    this.dropTarget.addEventListener('drop', (e) => {
+      e.preventDefault();
+      this.handleDrop(e);
+    });
+    
+    // Add to container
+    this.container.appendChild(this.dropTarget);
+  }
+  
+  positionDropTarget() {
+    if (!this.container || !this.dropTarget) return;
+    
+    // Get container dimensions
+    const containerRect = this.container.getBoundingClientRect();
+    
+    // Position in a sensible location (right side of container)
+    const dropWidth = 150;
+    const dropHeight = 150;
+    
+    // Randomize position but avoid overlaps with elements
+    const margin = 60;
+    const maxX = containerRect.width - dropWidth - margin;
+    const maxY = containerRect.height - dropHeight - margin;
+    
+    // Position not too close to edges
+    const x = margin + Math.random() * (maxX - margin * 2);
+    const y = margin + Math.random() * (maxY - margin * 2);
+    
+    this.dropTarget.style.left = `${x}px`;
+    this.dropTarget.style.top = `${y}px`;
+  }
+  
+  handleDragStart(e, element) {
+    this.isDragging = true;
+    this.currentDragElement = element;
+    
+    // Set data for drag operation
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('text/plain', 'dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
     
     // Add dragging class
-    draggable.classList.add('dragging');
+    element.classList.add('dragging');
     
-    // Store initial position
-    const rect = draggable.getBoundingClientRect();
-    draggable.dataset.offsetX = clientX - rect.left;
-    draggable.dataset.offsetY = clientY - rect.top;
-    
-    // Set initial position
-    this.updateElementPosition(draggable, clientX, clientY);
-  }
-  
-  handleDragMove(event) {
-    if (!this.active || !this.draggedElement) return;
-    
-    // Prevent default for touch events
-    if (event.type === 'touchmove') {
-      event.preventDefault();
+    // Highlight drop target
+    if (this.dropTarget) {
+      this.dropTarget.classList.add('highlight');
     }
-    
-    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
-    
-    // Update position
-    this.updateElementPosition(this.draggedElement, clientX, clientY);
   }
   
-  handleDragEnd(event) {
-    if (!this.active || !this.draggedElement) return;
+  handleDragEnd(e, element) {
+    this.isDragging = false;
     
     // Remove dragging class
-    this.draggedElement.classList.remove('dragging');
+    element.classList.remove('dragging');
     
-    // Check if dropped on a target
-    const droppedOnTarget = this.checkDropTarget(this.draggedElement);
-    
-    if (droppedOnTarget) {
-      // Handle successful drop
-      if (this.mode === 'single') {
-        // For single mode, check if dropped on correct target
-        if (this.correctTargets.includes(droppedOnTarget)) {
-          this.draggedElement.classList.add('success-animation');
-          this.onCorrectAction(this.draggedElement);
-        } else {
-          this.draggedElement.classList.add('incorrect-drop');
-          setTimeout(() => {
-            this.draggedElement.classList.remove('incorrect-drop');
-            this.resetElementPosition(this.draggedElement);
-          }, 500);
-          this.onIncorrectAction(this.draggedElement);
-        }
-      } else if (this.mode === 'all') {
-        // For all mode, track selections
-        const isCorrectPairing = this.checkCorrectPairing(this.draggedElement, droppedOnTarget);
-        
-        if (isCorrectPairing) {
-          // Add to selected elements
-          this.selectedElements.add(this.draggedElement);
-          
-          // Check if all correct elements are selected
-          if (this.selectedElements.size === this.correctTargets.length) {
-            // All correct elements selected
-            this.selectedElements.forEach(el => {
-              el.classList.add('success-animation');
-            });
-            this.onCorrectAction(this.draggedElement);
-          }
-        } else {
-          // Incorrect pairing
-          this.draggedElement.classList.add('incorrect-drop');
-          setTimeout(() => {
-            this.draggedElement.classList.remove('incorrect-drop');
-            this.resetElementPosition(this.draggedElement);
-          }, 500);
-          this.onIncorrectAction(this.draggedElement);
-        }
-      }
-    } else {
-      // Reset position if not dropped on a target
-      this.resetElementPosition(this.draggedElement);
+    // Remove highlight from drop target
+    if (this.dropTarget) {
+      this.dropTarget.classList.remove('highlight');
     }
-    
-    // Clear reference
-    this.draggedElement = null;
   }
   
-  updateElementPosition(element, clientX, clientY) {
-    const offsetX = parseFloat(element.dataset.offsetX) || 0;
-    const offsetY = parseFloat(element.dataset.offsetY) || 0;
+  handleDrop(e) {
+    if (!this.currentDragElement) return;
     
-    element.style.position = 'absolute';
-    element.style.left = `${clientX - offsetX}px`;
-    element.style.top = `${clientY - offsetY}px`;
-    element.style.zIndex = '1000';
+    // Remove highlight from drop target
+    this.dropTarget.classList.remove('highlight');
+    
+    // Check if the current element is the correct one
+    const isCorrect = this.validateInteraction(this.currentDragElement);
+    
+    if (isCorrect) {
+      // Success animation
+      this.currentDragElement.classList.add('success-animation');
+      this.dropTarget.classList.add('success-animation');
+      
+      // Trigger correct event
+      this.triggerEvent('correct', { element: this.currentDragElement });
+    } else {
+      // Incorrect animation
+      this.currentDragElement.classList.add('incorrect-click');
+      
+      // Remove after animation completes
+      setTimeout(() => {
+        this.currentDragElement.classList.remove('incorrect-click');
+      }, 500);
+      
+      // Reset position
+      this.resetElementPosition(this.currentDragElement);
+      
+      // Trigger incorrect event
+      this.triggerEvent('incorrect', { element: this.currentDragElement });
+    }
+    
+    this.currentDragElement = null;
   }
   
   resetElementPosition(element) {
-    // Reset to original position
-    element.style.position = '';
-    element.style.left = '';
-    element.style.top = '';
-    element.style.zIndex = '';
+    // If using a proper drag library, we'd reset position here
+    // For now, just remove the dragging class
+    element.classList.remove('dragging');
   }
   
-  checkDropTarget(element) {
+  // Touch event handlers for mobile support
+  handleTouchStart(e, element) {
+    // Prevent default to avoid scrolling
+    e.preventDefault();
+    
+    this.isDragging = true;
+    this.currentDragElement = element;
+    element.classList.add('dragging');
+    
+    // Get the touch position
+    const touch = e.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+    
     // Get element position
     const rect = element.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    this.elementStartX = rect.left;
+    this.elementStartY = rect.top;
+  }
+  
+  handleTouchMove(e, element) {
+    if (!this.isDragging) return;
     
-    // Check if over any drop target
-    for (const target of this.dropTargets) {
-      const targetRect = target.getBoundingClientRect();
+    // Prevent default to avoid scrolling
+    e.preventDefault();
+    
+    // Get the touch position
+    const touch = e.touches[0];
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+    
+    // Calculate new position
+    const newX = this.elementStartX + (touchX - this.touchStartX);
+    const newY = this.elementStartY + (touchY - this.touchStartY);
+    
+    // Apply new position
+    element.style.position = 'absolute';
+    element.style.left = `${newX}px`;
+    element.style.top = `${newY}px`;
+    
+    // Check if over drop target
+    if (this.dropTarget) {
+      const dropRect = this.dropTarget.getBoundingClientRect();
+      const elemRect = element.getBoundingClientRect();
+      
       if (
-        centerX >= targetRect.left &&
-        centerX <= targetRect.right &&
-        centerY >= targetRect.top &&
-        centerY <= targetRect.bottom
+        elemRect.right > dropRect.left &&
+        elemRect.left < dropRect.right &&
+        elemRect.bottom > dropRect.top &&
+        elemRect.top < dropRect.bottom
       ) {
-        return target;
+        this.dropTarget.classList.add('highlight');
+      } else {
+        this.dropTarget.classList.remove('highlight');
       }
     }
-    
-    return null;
   }
   
-  checkCorrectPairing(element, target) {
-    // This would be implemented based on your specific pairing logic
-    // For example, matching words with their categories
-    return element.dataset.category === target.dataset.category;
-  }
-  
-  setupForChallenge(challenge) {
-    super.setupForChallenge(challenge);
+  handleTouchEnd(e, element) {
+    if (!this.isDragging) return;
     
-    // Reset state
-    this.selectedElements = new Set();
-    this.draggedElement = null;
+    this.isDragging = false;
+    element.classList.remove('dragging');
     
-    // Store references
-    this.draggables = challenge.elements || [];
-    
-    // Set mode
-    this.mode = challenge.metadata?.mode || challenge.mode || 'single';
-    
-    // Create drop targets based on challenge type
-    this.createDropTargets(challenge);
-    
-    // Add draggable class to all elements
-    if (this.draggables && this.draggables.length > 0) {
-      this.draggables.forEach(element => {
-        if (element) {
-          element.classList.add('draggable');
-          element.classList.remove('success-animation', 'incorrect-drop');
-        }
-      });
-    }
-  }
-  
-  createDropTargets(challenge) {
-    // Clear existing drop targets
-    this.dropTargets.forEach(target => {
-      if (target.parentNode) {
-        target.parentNode.removeChild(target);
+    // Check if over drop target
+    if (this.dropTarget) {
+      const dropRect = this.dropTarget.getBoundingClientRect();
+      const elemRect = element.getBoundingClientRect();
+      
+      if (
+        elemRect.right > dropRect.left &&
+        elemRect.left < dropRect.right &&
+        elemRect.bottom > dropRect.top &&
+        elemRect.top < dropRect.bottom
+      ) {
+        // Simulate drop
+        this.handleDrop(e);
+      } else {
+        // Reset position
+        this.resetElementPosition(element);
+        this.dropTarget.classList.remove('highlight');
       }
-    });
-    this.dropTargets = [];
-    
-    // Create new drop targets based on challenge type
-    // This would be customized based on your specific challenge types
-    
-    // For basic challenges, create a single target area
-    const targetArea = document.createElement('div');
-    targetArea.classList.add('drop-target');
-    targetArea.style.position = 'absolute';
-    targetArea.style.bottom = '20%';
-    targetArea.style.left = '50%';
-    targetArea.style.transform = 'translateX(-50%)';
-    targetArea.style.width = '200px';
-    targetArea.style.height = '200px';
-    targetArea.style.border = '3px dashed #333';
-    targetArea.style.borderRadius = '10px';
-    targetArea.style.display = 'flex';
-    targetArea.style.justifyContent = 'center';
-    targetArea.style.alignItems = 'center';
-    
-    // Set correct target
-    this.correctTarget = targetArea;
-    this.correctTargets = [targetArea];
-    
-    this.container.appendChild(targetArea);
-    this.dropTargets.push(targetArea);
+    }
   }
   
   cleanup() {
-    super.cleanup();
-    
-    // Remove draggable class from elements
-    if (this.draggables && this.draggables.length > 0) {
-      this.draggables.forEach(element => {
-        if (element) {
-          element.classList.remove('draggable', 'dragging');
-          this.resetElementPosition(element);
-        }
-      });
-    }
-    
-    // Remove drop targets
-    this.dropTargets.forEach(target => {
-      if (target.parentNode) {
-        target.parentNode.removeChild(target);
+    // Remove all event listeners
+    this.activeElements.forEach(element => {
+      if (element._dragStartHandler) {
+        element.removeEventListener('dragstart', element._dragStartHandler);
+        delete element._dragStartHandler;
       }
+      if (element._dragEndHandler) {
+        element.removeEventListener('dragend', element._dragEndHandler);
+        delete element._dragEndHandler;
+      }
+      
+      // Remove touch event listeners
+      element.removeEventListener('touchstart', element._touchStartHandler);
+      element.removeEventListener('touchmove', element._touchMoveHandler);
+      element.removeEventListener('touchend', element._touchEndHandler);
+      
+      element.classList.remove('draggable', 'dragging', 'success-animation', 'incorrect-click');
+      element.removeAttribute('draggable');
     });
     
-    this.draggables = [];
-    this.correctTarget = null;
-    this.correctTargets = [];
-    this.dropTargets = [];
-    this.selectedElements = new Set();
+    // Remove drop target
+    if (this.dropTarget && this.container.contains(this.dropTarget)) {
+      this.container.removeChild(this.dropTarget);
+    }
+    
+    this.dropTarget = null;
+    this.activeElements = [];
+    this.currentDragElement = null;
+    this.isDragging = false;
+  }
+  
+  modifyInstructionForInput(instruction) {
+    // Convert "Click on..." to "Drag..."
+    if (instruction.startsWith('Click on')) {
+      return instruction.replace('Click on', 'Drag');
+    }
+    // Add instruction about dropping
+    if (!instruction.includes('to the drop target')) {
+      return `${instruction} to the drop target`;
+    }
+    return instruction;
   }
 } 

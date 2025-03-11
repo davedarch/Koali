@@ -22,10 +22,11 @@ class Game {
     this.gameArea.className = 'game-area';
     this.container.appendChild(this.gameArea);
     
-    // Initialize UI components
-    this.feedback = new FeedbackSystem(this.container);
+    // Initialize UI components with game reference
+    this.feedback = new FeedbackSystem(this.container, this);
     this.progressBar = new ProgressBar(this.container);
     this.audio = new AudioSystem();
+    this.speechService = new SpeechService();
     
     // Initialize challenge and input method
     this.challenge.init(this.gameArea);
@@ -49,8 +50,7 @@ class Game {
   
   handleCorrectAction(data) {
     // Show success feedback
-    this.feedback.showSuccess();
-    this.audio.playSound('success');
+    this.feedback.showCorrectFeedback();
     
     // Update progress
     const result = this.state.incrementProgress();
@@ -61,7 +61,6 @@ class Game {
       // Game complete
       setTimeout(() => {
         this.feedback.showGameComplete();
-        this.audio.playSound('complete');
       }, 1000);
     } else if (result === 'level-up') {
       // Level up
@@ -79,8 +78,7 @@ class Game {
   
   handleIncorrectAction(data) {
     // Show error feedback
-    this.feedback.showError();
-    this.audio.playSound('error');
+    this.feedback.showIncorrectFeedback();
     
     // Update progress (optional penalty)
     this.state.decrementProgress();
@@ -108,7 +106,12 @@ class Game {
       
       // Set instruction
       console.log('Setting instruction:', challengeData.instruction);
-      this.feedback.setInstruction(challengeData.instruction);
+      
+      // Update to use the game's setInstruction method
+      if (challengeData && challengeData.instruction) {
+        // Instead of this.feedback.setInstruction, use our method that creates clickable words
+        this.setInstruction(challengeData.instruction);
+      }
     } catch (error) {
       console.error('Error generating challenge:', error);
       this.feedback.setInstruction('Error: Could not generate challenge');
@@ -136,5 +139,21 @@ class Game {
     
     // Set up new challenge
     this.setupNextChallenge();
+  }
+  
+  setInstruction(instruction) {
+    const instructionElement = document.getElementById('instruction');
+    
+    // Use speech service to create a clickable instruction
+    if (this.speechService) {
+      this.speechService.createClickableInstruction(instruction, instructionElement);
+    } else {
+      instructionElement.textContent = instruction;
+    }
+    
+    // Let feedback system know about the new instruction (but don't overwrite our clickable content)
+    this.feedback.currentInstruction = instruction;
+    
+    console.log('Setting instruction:', instruction);
   }
 } 

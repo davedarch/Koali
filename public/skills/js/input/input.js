@@ -1,36 +1,37 @@
 class InputMethod extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.container = null;
     this.options = options;
-    this.active = false;
+    this.container = null;
+    this.challengeData = null;
   }
   
   init(container) {
     this.container = container;
-    this.setupEventListeners();
   }
   
-  setupEventListeners() {
-    // Base method to be overridden by specific input methods
-    throw new Error('setupEventListeners method must be implemented by subclass');
-  }
-  
-  setupForChallenge(challenge) {
-    // Activate input method
-    this.active = true;
-  }
-  
-  onCorrectAction(data) {
-    this.triggerEvent('correct', data);
-  }
-  
-  onIncorrectAction(data) {
-    this.triggerEvent('incorrect', data);
+  setupForChallenge(challengeData) {
+    this.challengeData = challengeData;
+    // To be implemented by subclasses
   }
   
   cleanup() {
-    // Deactivate input method
-    this.active = false;
+    // To be implemented by subclasses
+  }
+  
+  modifyInstructionForInput(instruction) {
+    // To be implemented by subclasses
+    return instruction;
+  }
+  
+  validateInteraction(element) {
+    // Default validation - check if element is the correct one
+    if (this.challengeData.mode === 'all') {
+      // For multi-select challenges
+      return this.challengeData.correctElements.includes(element);
+    } else {
+      // For single-select challenges
+      return element === this.challengeData.correctElement;
+    }
   }
 } 

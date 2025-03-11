@@ -1,0 +1,44 @@
+/* Basic shape styling */
+.challenge-element {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Circle shape */
+.circle {
+  border-radius: 50%;
+}
+
+/* Square shape */
+.square {
+  border-radius: 4px;
+}
+
+/* Triangle shape */
+.triangle {
+  width: 0 !important;
+  height: 0 !important;
+  background-color: transparent !important;
+  border-left: transparent solid calc(var(--size, 100px) / 2);
+  border-right: transparent solid calc(var(--size, 100px) / 2);
+  border-bottom: solid calc(var(--size, 100px));
+}
+
+/* Triangle color classes */
+.triangle.red { border-bottom-color: red; }
+.triangle.blue { border-bottom-color: blue; }
+.triangle.green { border-bottom-color: green; }
+.triangle.orange { border-bottom-color: orange; }
+.triangle.purple { border-bottom-color: purple; }
+.triangle.yellow { border-bottom-color: yellow; }
+
+/* Standard color classes */
+.red { background-color: red; }
+.blue { background-color: blue; }
+.green { background-color: green; }
+.orange { background-color: orange; }
+.purple { background-color: purple; }
+.yellow { background-color: yellow; } 

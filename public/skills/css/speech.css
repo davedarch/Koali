@@ -1,0 +1,30 @@
+/* Clickable word styles */
+.clickable-word {
+  margin: 0 5px;
+  cursor: pointer;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.clickable-word:hover {
+  color: #3498db;
+  background-color: #e0f7fa;
+}
+
+/* Play icon styles */
+.play-icon {
+  font-size: 24px !important;
+  color: #000 !important;
+  margin-right: 15px !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  transition: transform 0.2s ease;
+}
+
+.play-icon:hover {
+  transform: scale(1.2);
+}
+
+/* Add a fallback for missing icons */
+.play-icon:before {
+  content: "🔊"; /* Unicode speaker emoji as fallback */
+} 

@@ -1,71 +1,252 @@
 class SizeChallenge extends Challenge {
   constructor(options = {}) {
     super(options);
-    
-    // Define shape types
-    this.shapes = ['circle', 'square'];
-    
-    // Define colors
-    this.colors = [
-      { hex: '#3498db', name: 'blue' },
-      { hex: '#e67e22', name: 'orange' },
-      { hex: '#9b59b6', name: 'purple' },
-      { hex: '#f1c40f', name: 'yellow' },
-      { hex: '#c0392b', name: 'red' }
-    ];
-    
-    // Define sizes
-    this.sizes = [
-      { class: 'size-small', name: 'small' },
-      { class: 'size-medium', name: 'medium' },
-      { class: 'size-large', name: 'large' }
-    ];
+    this.minElements = 3;
+    this.maxElements = 6;
   }
   
-  generateChallenge(level) {
-    this.currentLevel = level;
+  async generateChallenge(level) {
+    console.log('=== SIZE CHALLENGE GENERATION START ===');
     
     // Determine number of elements based on level
-    const elementCount = Math.min(3 + level, 9);
+    const numElements = Math.min(this.minElements + Math.floor(level / 2), this.maxElements);
     
-    // Create elements
-    const elements = this.createElements(elementCount);
+    // Get random shape type for this challenge
+    const shapes = ['circle', 'square', 'triangle'];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
     
-    // Apply random shapes, colors, and sizes
-    elements.forEach(element => {
-      // Add challenge element class
-      element.classList.add('challenge-element');
+    // Decide whether this is a "biggest" or "smallest" challenge
+    const sizeMode = Math.random() > 0.5 ? 'biggest' : 'smallest';
+    
+    // Set minimum and maximum sizes based on level
+    const minSize = 40 + (level * 5);
+    const maxSize = 100 + (level * 10);
+    
+    // Generate elements with varying sizes
+    const elements = [];
+    const sizes = [];
+    const usedColors = new Set();
+    
+    // Decide if we should use color as a qualifier (more likely in higher levels)
+    const useColorQualifier = level > 3 && Math.random() > 0.5;
+    let targetColor = null;
+    
+    if (useColorQualifier) {
+      // If using color qualifier, select a target color
+      const colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow'];
+      targetColor = colors[Math.floor(Math.random() * colors.length)];
       
-      // Select random shape
-      const shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
-      element.classList.add(shape);
+      // Ensure we'll have at least 2 elements of this color+shape to make size comparison meaningful
+      const minTargetElements = 2;
       
-      // Select random color
-      const color = this.colors[Math.floor(Math.random() * this.colors.length)];
-      element.style.backgroundColor = color.hex;
-      element.dataset.color = color.name;
+      // Create the target elements (same color+shape, different sizes)
+      for (let i = 0; i < minTargetElements; i++) {
+        // Generate unique size
+        let size;
+        do {
+          size = minSize + Math.floor(Math.random() * (maxSize - minSize));
+        } while (sizes.includes(size));
+        
+        sizes.push(size);
+        
+        // Create element
+        const element = this.createShapeElement(shape, targetColor, size);
+        elements.push(element);
+      }
       
-      // Select random size
-      const size = this.sizes[Math.floor(Math.random() * this.sizes.length)];
-      element.classList.add(size.class);
-      element.dataset.size = size.name;
-      element.dataset.shape = shape;
+      // Add the target color to used colors
+      usedColors.add(targetColor);
+    }
+    
+    // Fill remaining elements
+    while (elements.length < numElements) {
+      // Generate unique size
+      let size;
+      do {
+        size = minSize + Math.floor(Math.random() * (maxSize - minSize));
+      } while (sizes.includes(size));
+      
+      sizes.push(size);
+      
+      // If we're using a color qualifier, don't use the target color for these elements
+      let color;
+      if (useColorQualifier) {
+        const colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow']
+          .filter(c => c !== targetColor);
+        color = colors[Math.floor(Math.random() * colors.length)];
+      } else {
+        // Pick any color
+        const colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow'];
+        color = colors[Math.floor(Math.random() * colors.length)];
+      }
+      
+      // Only allow the same color+shape combo if we're not using a color qualifier
+      if (!useColorQualifier || shape !== shape || !usedColors.has(color)) {
+        const element = this.createShapeElement(shape, color, size);
+        elements.push(element);
+        usedColors.add(color);
+      }
+    }
+    
+    // Determine the correct element
+    let correctIndex;
+    if (sizeMode === 'biggest') {
+      correctIndex = sizes.indexOf(Math.max(...sizes));
+    } else {
+      correctIndex = sizes.indexOf(Math.min(...sizes));
+    }
+    
+    const correctElement = elements[correctIndex];
+    const correctColor = correctElement.dataset.color;
+    
+    // Generate instruction
+    let instruction;
+    if (useColorQualifier) {
+      instruction = `Click on the ${sizeMode} ${targetColor} ${shape}`;
+    } else {
+      instruction = `Click on the ${sizeMode} ${shape}`;
+    }
+    
+    // Position elements in the game area
+    this.positionElementsInGameArea(elements);
+    
+    console.log('Generated size challenge:', {
+      instruction,
+      elements,
+      correctElement
     });
     
-    // Select one element as the correct one
-    const correctElement = elements[Math.floor(Math.random() * elements.length)];
-    
-    // Create instruction
-    const instruction = `Click on the ${correctElement.dataset.size} ${correctElement.dataset.color} ${correctElement.dataset.shape}`;
-    
-    // Position elements
-    this.renderElements(elements);
-    this.positionElements(elements);
+    console.log('=== SIZE CHALLENGE GENERATION COMPLETE ===');
     
     return {
       instruction,
       elements,
       correctElement
     };
+  }
+  
+  createShapeElement(shape, color, size) {
+    const element = document.createElement('div');
+    element.classList.add('challenge-element', shape, color);
+    
+    // Handle triangle specially
+    if (shape === 'triangle') {
+      // Set a custom property for the triangle size
+      element.style.setProperty('--size', `${size}px`);
+    } else {
+      // For other shapes, set width and height directly
+      element.style.width = `${size}px`;
+      element.style.height = `${size}px`;
+    }
+    
+    // Store data attributes
+    element.dataset.shape = shape;
+    element.dataset.color = color;
+    element.dataset.size = size;
+    
+    return element;
+  }
+  
+  // New method to position elements in the game area with overlap prevention
+  positionElementsInGameArea(elements) {
+    if (!this.gameArea) {
+      console.error('Game area is not defined');
+      return;
+    }
+    
+    console.log('Positioning elements in game area:', elements.length);
+    
+    // Add elements to the game area
+    elements.forEach(element => {
+      this.gameArea.appendChild(element);
+    });
+    
+    // Get container dimensions
+    const containerRect = this.gameArea.getBoundingClientRect();
+    const usableWidth = containerRect.width * 0.8;
+    const usableHeight = containerRect.height * 0.6;
+    const startY = 100; // Start below the instruction
+    
+    // Array to keep track of positioned elements
+    const positionedElements = [];
+    
+    // Position each element with overlap checking
+    elements.forEach(element => {
+      // Get element dimensions
+      const width = parseInt(element.dataset.size);
+      const height = parseInt(element.dataset.size);
+      
+      // Try to find a position without overlap
+      let left, top;
+      let attempts = 0;
+      const maxAttempts = 50;
+      let overlapping = true;
+      
+      while (overlapping && attempts < maxAttempts) {
+        // Calculate random position within bounds
+        left = Math.floor(Math.random() * (usableWidth - width));
+        top = startY + Math.floor(Math.random() * (usableHeight - height));
+        
+        // Check for overlap with already positioned elements
+        overlapping = false;
+        for (const positioned of positionedElements) {
+          if (this.elementsOverlap(
+            {left, top, width, height},
+            {
+              left: parseInt(positioned.style.left),
+              top: parseInt(positioned.style.top),
+              width: parseInt(positioned.dataset.size),
+              height: parseInt(positioned.dataset.size)
+            }
+          )) {
+            overlapping = true;
+            break;
+          }
+        }
+        
+        attempts++;
+      }
+      
+      console.log(`Positioned element after ${attempts} attempts`);
+      
+      // Apply position
+      element.style.position = 'absolute';
+      element.style.left = `${left}px`;
+      element.style.top = `${top}px`;
+      
+      // Make sure the element is visible
+      element.style.zIndex = '10';
+      element.style.display = 'block';
+      
+      // Add to positioned elements
+      positionedElements.push(element);
+    });
+  }
+
+  // Helper method to check if two elements overlap
+  elementsOverlap(a, b) {
+    // Allow 30% overlap for more natural positioning
+    const overlapThreshold = 0.7;
+    
+    // Calculate overlap area
+    const overlapX = Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left));
+    const overlapY = Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
+    const overlapArea = overlapX * overlapY;
+    
+    // Calculate smaller element area
+    const areaA = a.width * a.height;
+    const areaB = b.width * b.height;
+    const smallerArea = Math.min(areaA, areaB);
+    
+    // Calculate percentage of smaller element that is overlapped
+    const overlapPercentage = overlapArea / smallerArea;
+    
+    // Return true if overlap percentage is above threshold
+    return overlapPercentage > (1 - overlapThreshold);
+  }
+
+  init(gameArea) {
+    super.init(gameArea);
+    this.gameArea = gameArea; // Make sure to store the reference
   }
 } 

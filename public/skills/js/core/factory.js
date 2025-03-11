@@ -5,6 +5,8 @@ class GameFactory {
         return new ClickInputMethod(options);
       case 'drag':
         return new DragInputMethod(options);
+      case 'select':
+        return new SelectInputMethod(options);
       default:
         throw new Error(`Unknown input method: ${type}`);
     }

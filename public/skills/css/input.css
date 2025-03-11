@@ -38,11 +38,11 @@
 
 /* Select interaction styles */
 .selectable {
-  transition: outline 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .selectable:hover {
-  outline: 2px solid rgba(52, 152, 219, 0.5);
+  outline: 2px solid rgba(52, 152, 219, 0.3);
 }
 
 .selectable.selected {
@@ -55,4 +55,15 @@
   background-color: rgba(52, 152, 219, 0.2);
   pointer-events: none;
   z-index: 500;
+}
+
+.highlight-correct {
+  animation: flash-correct 0.8s ease;
+  outline: 3px solid #2ecc71;
+}
+
+@keyframes flash-correct {
+  0% { outline-color: transparent; }
+  50% { outline-color: #2ecc71; }
+  100% { outline-color: transparent; }
 } 

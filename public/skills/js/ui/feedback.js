@@ -1,14 +1,25 @@
 class FeedbackSystem {
-  constructor(container) {
+  constructor(container, game) {
     this.container = container;
     this.instructionElement = container.querySelector('#instruction');
+    this.game = game; // Reference to game for accessing speechService
   }
   
   setInstruction(text) {
     if (this.instructionElement) {
-      console.log('Setting instruction:', text); // Debug log
-      this.instructionElement.textContent = text;
-      this.instructionElement.style.display = 'block'; // Ensure it's visible
+      console.log('Setting instruction:', text);
+      
+      // Clear the instruction element
+      this.instructionElement.innerHTML = '';
+      
+      // Use speech service to create clickable instruction if available
+      if (this.game && this.game.speechService) {
+        this.game.speechService.createClickableInstruction(text, this.instructionElement);
+      } else {
+        this.instructionElement.textContent = text;
+      }
+      
+      this.instructionElement.style.display = 'block';
     } else {
       console.error('Instruction element not found!');
       // Try to find it again or create it if missing
@@ -30,18 +41,24 @@ class FeedbackSystem {
         this.instructionElement.style.zIndex = '1000';
         this.container.prepend(this.instructionElement);
       }
-      this.instructionElement.textContent = text;
+      
+      // But use speech service for the content
+      if (this.game && this.game.speechService) {
+        this.game.speechService.createClickableInstruction(text, this.instructionElement);
+      } else {
+        this.instructionElement.textContent = text;
+      }
     }
   }
   
   showSuccess() {
     console.log('Success!');
-    // Could add a success animation or sound here
+    this.showCorrectFeedback();
   }
   
   showError() {
     console.log('Incorrect!');
-    // Could add an error animation or sound here
+    this.showIncorrectFeedback();
   }
   
   showGameComplete() {
@@ -76,5 +93,19 @@ class FeedbackSystem {
     overlay.appendChild(message);
     overlay.appendChild(button);
     document.body.appendChild(overlay);
+  }
+  
+  showCorrectFeedback() {
+    console.log('Success!');
+    
+    // Remove speech feedback for correct answers
+    // No "Correct!" audio response will play now
+  }
+  
+  showIncorrectFeedback() {
+    console.log('Incorrect!');
+    
+    // Remove speech feedback for incorrect answers
+    // No "Try again" audio response will play now
   }
 } 
