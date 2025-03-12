@@ -36,45 +36,92 @@ class SpeechService {
   }
   
   // Create clickable instruction element
-  createClickableInstruction(instruction, container) {
-    // Clear container
+  createClickableInstruction(htmlString, container) {
+    console.log("SpeechService.createClickableInstruction - Input HTML:", htmlString);
+    
+    // Clear the container
     container.innerHTML = '';
     
-    // Create a single play icon at the beginning
-    const playIcon = document.createElement('i');
-    playIcon.className = 'fas fa-volume-up play-icon';
-    playIcon.style.fontSize = '24px';
-    playIcon.style.marginRight = '15px';
-    playIcon.style.cursor = 'pointer';
-    playIcon.style.color = '#000'; // Black color
+    // Create a wrapper div to hold all content
+    const contentWrapper = document.createElement('div');
+    contentWrapper.style.display = 'flex';
+    contentWrapper.style.flexDirection = 'column';
+    contentWrapper.style.alignItems = 'center';
+    contentWrapper.style.width = '100%';
+    container.appendChild(contentWrapper);
     
-    // Add click handler to play icon
-    playIcon.addEventListener('click', () => {
-      this.speakInstruction(instruction);
-    });
+    // Split the HTML at the <br> tag first, then remove other HTML tags
+    const parts = htmlString.split(/<br>/);
+    console.log("Parts after splitting by <br>:", parts);
     
-    container.appendChild(playIcon);
-    
-    // Split text into words
-    const words = instruction.split(' ');
-    
-    // Create span for each word
-    words.forEach(word => {
-      const span = document.createElement('span');
-      span.classList.add('clickable-word');
-      span.textContent = word;
+    // Process each part (before and after the <br>)
+    parts.forEach((part, index) => {
+      // Remove remaining HTML tags
+      const cleanPart = part.replace(/<[^>]*>/g, '').trim();
+      if (!cleanPart) return; // Skip empty parts
       
-      // Add click handler
-      span.addEventListener('click', () => {
-        this.speakWord(word);
+      console.log(`Processing part ${index}:`, cleanPart);
+      
+      const lineContainer = document.createElement('div');
+      lineContainer.style.display = 'flex';
+      lineContainer.style.width = '100%';
+      lineContainer.style.justifyContent = 'center';
+      lineContainer.style.alignItems = 'center';
+      
+      // Add play icon to the first part only
+      if (index === 0) {
+        const playIcon = document.createElement('i');
+        playIcon.className = 'fas fa-volume-up play-icon';
+        playIcon.style.fontSize = '24px';
+        playIcon.style.marginRight = '10px';
+        playIcon.style.cursor = 'pointer';
+        playIcon.style.color = '#000';
+        
+        // Add click handler to play icon that reads the entire instruction
+        playIcon.addEventListener('click', () => {
+          const fullText = htmlString.replace(/<br>/g, ' ').replace(/<[^>]*>/g, '');
+          console.log("Speaking full instruction:", fullText);
+          this.speakInstruction(fullText);
+        });
+        
+        lineContainer.appendChild(playIcon);
+      }
+      
+      // Create a container for words
+      const wordsContainer = document.createElement('div');
+      wordsContainer.style.display = 'inline-block';
+      
+      // Style the second part (sequence items)
+      if (index === 1) {
+        wordsContainer.style.fontWeight = 'bold';
+        wordsContainer.style.marginTop = '10px'; // Reduced from 20px
+        wordsContainer.style.paddingTop = '5px'; // Reduced from 10px
+        wordsContainer.style.borderTop = '1px solid #eee';
+        wordsContainer.style.color = '#000';
+      }
+      
+      // Split this part into words and create clickable spans
+      const words = cleanPart.split(/\s+/);
+      
+      words.forEach(word => {
+        if (!word) return;
+        
+        const span = document.createElement('span');
+        span.className = 'clickable-word';
+        span.textContent = word + ' ';
+        span.style.cursor = 'pointer';
+        
+        // Make each word clickable
+        span.addEventListener('click', () => {
+          console.log("Speaking word:", word);
+          this.speakWord(word);
+        });
+        
+        wordsContainer.appendChild(span);
       });
       
-      container.appendChild(span);
-      
-      // Add space after each word except the last
-      if (word !== words[words.length - 1]) {
-        container.appendChild(document.createTextNode(' '));
-      }
+      lineContainer.appendChild(wordsContainer);
+      contentWrapper.appendChild(lineContainer);
     });
     
     return container;

@@ -10,8 +10,26 @@ class Challenge {
   }
   
   generateChallenge(level) {
+    // Determine if we should use a sequence challenge based on URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const inputType = urlParams.get('input');
+    
+    console.log("Challenge.generateChallenge - URL params:", urlParams.toString());
+    console.log("Challenge.generateChallenge - Input type from URL:", inputType);
+    
+    if (inputType === 'sequence') {
+      console.log("Using sequence challenge type");
+      return this.generateSequenceChallenge(level);
+    } else {
+      console.log("Using standard challenge type (not sequence)");
+      // Base method to be overridden by specific challenge types
+      throw new Error('generateChallenge method must be implemented by subclass');
+    }
+  }
+  
+  generateSequenceChallenge(level) {
     // Base method to be overridden by specific challenge types
-    throw new Error('generateChallenge method must be implemented by subclass');
+    throw new Error('generateSequenceChallenge method must be implemented by subclass');
   }
   
   createElements(count) {
@@ -61,5 +79,13 @@ class Challenge {
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
+  }
+  
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 } 

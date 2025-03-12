@@ -14,19 +14,20 @@ body {
   overflow: hidden;
 }
 
-#instruction {
-  font-size: 48px;
-  margin-top: 0;
-  text-align: center;
+#instruction-container {
+  margin-bottom: 20px;
+  padding: 30px 10px; /* Increase top padding */
+  min-height: 80px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  height: 10vh;
-  width: 100%;
-  background-color: #f4f4f4;
-  position: fixed;
-  top: 0;
-  z-index: 1000;
+  align-items: center;
+}
+
+#instruction {
+  text-align: center;
+  font-size: 1.2em;
+  line-height: 1.5;
+  max-width: 90%;
 }
 
 #progress-container {

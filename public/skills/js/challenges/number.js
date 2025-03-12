@@ -12,7 +12,8 @@ class NumberChallenge extends Challenge {
     ];
   }
   
-  generateChallenge(level) {
+  async generateChallenge(level) {
+    console.log("=== GENERATING NUMBER CHALLENGE ===");
     this.currentLevel = level;
     
     // Determine number of elements based on level
@@ -233,14 +234,26 @@ class NumberChallenge extends Challenge {
       const color = this.colors[Math.floor(Math.random() * this.colors.length)];
       element.style.backgroundColor = color.hex;
       
-      // Make numbers larger for better visibility
-      element.style.fontSize = '36px';
+      // Make numbers bigger - approximately 67% increase
+      element.style.width = '100px';  // Increased to 100px
+      element.style.height = '100px'; // Increased to 100px
+      element.style.fontSize = '52px'; // Increased proportionally
       element.style.fontWeight = 'bold';
+      
+      // Additional styling to ensure numbers are centered
+      element.style.display = 'flex';
+      element.style.alignItems = 'center';
+      element.style.justifyContent = 'center';
+      
+      // Add a slight drop shadow for better visibility
+      element.style.boxShadow = '0 3px 6px rgba(0,0,0,0.2)';
     });
     
     // Position elements
     this.renderElements(elements);
     this.positionElements(elements);
+    
+    console.log("Elements after creation:", elements);
     
     return {
       instruction,
@@ -353,5 +366,126 @@ class NumberChallenge extends Challenge {
     
     console.log("=== NUMBER CHALLENGE POSITIONING COMPLETE ===");
     return elements;
+  }
+
+  createNumberElement(number, type) {
+    console.log(`Creating number element: ${number} with type: ${type}`);
+    
+    const element = document.createElement('div');
+    element.classList.add('challenge-element', 'number');
+    
+    // Add a distinctive class to help identify our styled elements
+    element.classList.add('number-element');
+    
+    element.dataset.number = number;
+    element.dataset.type = type;
+    element.textContent = number;
+    
+    // Apply styles with !important to ensure they aren't overridden
+    element.style.fontSize = '48px !important'; // Even larger for testing
+    element.style.width = '75px !important';
+    element.style.height = '75px !important';
+    
+    // Apply other styles
+    element.style.display = 'flex';
+    element.style.alignItems = 'center';
+    element.style.justifyContent = 'center';
+    element.style.borderRadius = '50%';
+    element.style.backgroundColor = this.getNumberColor(number);
+    element.style.color = 'white';
+    element.style.fontWeight = 'bold';
+    element.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+    
+    // Log what we expect the size to be
+    console.log(`Number ${number} - Setting size to: ${element.style.width}x${element.style.height}, fontSize: ${element.style.fontSize}`);
+    
+    return element;
+  }
+
+  generateSequenceChallenge(level) {
+    this.currentLevel = level;
+    
+    // Determine sequence length based on level
+    const sequenceLength = Math.min(3 + Math.floor(level / 2), 6);
+    
+    // Create elements for the sequence
+    const elements = [];
+    const numbers = [];
+    
+    // Generate unique numbers
+    let maxNumber = 30 + (level * 5);
+    while (numbers.length < sequenceLength) {
+      const num = Math.floor(Math.random() * maxNumber) + 1;
+      if (!numbers.includes(num)) {
+        numbers.push(num);
+      }
+    }
+    
+    // Sort numbers for the sequence (ascending by default)
+    let sortedNumbers = [...numbers].sort((a, b) => a - b);
+    let sequenceDirection = 'ascending';
+    
+    // For higher levels, sometimes use descending order
+    if (level > 3 && Math.random() > 0.5) {
+      sortedNumbers = [...numbers].sort((a, b) => b - a);
+      sequenceDirection = 'descending';
+    }
+    
+    // Create elements for each number
+    numbers.forEach((number, index) => {
+      const element = this.createNumberElement(number, 'number');
+      element.dataset.sortValue = number; // For sorting
+      element.dataset.index = index; // To track original order
+      elements.push(element);
+    });
+    
+    // Create additional distractor elements for higher levels
+    if (level > 2) {
+      const distractorCount = Math.min(2 + Math.floor(level / 2), 4);
+      for (let i = 0; i < distractorCount; i++) {
+        let num;
+        do {
+          num = Math.floor(Math.random() * maxNumber) + 1;
+        } while (numbers.includes(num));
+        
+        const element = this.createNumberElement(num, 'distractor');
+        element.dataset.sortValue = num;
+        element.dataset.index = sequenceLength + i;
+        elements.push(element);
+      }
+    }
+    
+    // Define the correct sequence - indices of elements that should be in sorted order
+    const correctSequence = elements
+      .filter(el => el.dataset.type === 'number')
+      .sort((a, b) => {
+        if (sequenceDirection === 'ascending') {
+          return parseInt(a.dataset.sortValue) - parseInt(b.dataset.sortValue);
+        } else {
+          return parseInt(b.dataset.sortValue) - parseInt(a.dataset.sortValue);
+        }
+      })
+      .map(el => el.dataset.index);
+    
+    // Create instruction
+    const instruction = `Arrange the numbers in ${sequenceDirection} order`;
+    
+    // Shuffle all elements
+    this.shuffleArray(elements);
+    
+    return {
+      instruction,
+      elements,
+      correctSequence,
+      mode: 'sequence'
+    };
+  }
+
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 } 

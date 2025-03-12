@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/challenges.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/speech.css">
+  <link rel="stylesheet" href="css/sequence.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="css/shapes.css">
   <style>
@@ -110,26 +111,33 @@
   <script src="js/input/click.js"></script>
   <script src="js/input/drag.js"></script>
   <script src="js/input/select.js"></script>
+  <script src="js/input/sequence.js"></script>
   
   <!-- Debug Panel -->
   <script src="js/debug.js"></script>
   
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Parse URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const inputType = urlParams.get('input') || 'click';
-      const challengeType = urlParams.get('challenge') || 'basic';
-      const level = parseInt(urlParams.get('level') || '1');
-      
+    document.addEventListener('DOMContentLoaded', async function() {
       try {
-        // Create input method
-        const inputMethod = GameFactory.createInputMethod(inputType);
+        console.log("DOM loaded, initializing game...");
+        console.log("URL:", window.location.href);
         
-        // Create challenge type
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const inputType = urlParams.get('input') || 'click';
+        const challengeType = urlParams.get('challenge') || 'basic';
+        const level = parseInt(urlParams.get('level') || '1');
+        
+        console.log(`Game parameters - Input: ${inputType}, Challenge: ${challengeType}, Level: ${level}`);
+        
+        // Create game components
+        const inputMethod = GameFactory.createInputMethod(inputType);
         const challenge = GameFactory.createChallenge(challengeType);
         
-        // Create game with options
+        console.log("Input method created:", inputMethod.constructor.name);
+        console.log("Challenge created:", challenge.constructor.name);
+        
+        // Create game
         const game = new Game(inputMethod, challenge, {
           startLevel: level,
           maxLevel: 10

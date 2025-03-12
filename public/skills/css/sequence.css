@@ -1,0 +1,126 @@
+/* Sequence interaction styles */
+.draggables-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(52, 152, 219, 0.1);
+  border-radius: 10px;
+  min-height: 120px;
+}
+
+.sequence-slots-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 30px 0;
+  gap: 10px;
+}
+
+.sequence-slot {
+  width: 100px;
+  height: 100px;
+  margin: 0 10px;
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sequence-slot.over {
+  background-color: rgba(52, 152, 219, 0.2);
+  border-color: #2980b9;
+}
+
+.sequence-slot.correct {
+  border-color: #2ecc71;
+  background-color: rgba(46, 204, 113, 0.2);
+}
+
+.sequence-slot.incorrect {
+  border-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.2);
+  animation: shake 0.5s;
+}
+
+.draggable {
+  cursor: grab;
+  user-select: none;
+}
+
+.draggable.dragging {
+  opacity: 0.6;
+  transform: scale(1.05);
+  cursor: grabbing;
+}
+
+/* Position indicators */
+.sequence-slot::before {
+  content: attr(data-position);
+  position: absolute;
+  top: -20px;
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+/* Ensure draggable elements are properly sized and visible */
+.draggables-container .challenge-element {
+  margin: 10px !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  float: none !important;
+}
+
+/* Add a specific class for sequence draggables */
+.sequence-draggable {
+  width: 80px !important;
+  height: 80px !important;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  margin: 10px !important;
+}
+
+/* Ensure the draggable container has enough space and proper layout */
+.draggables-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 15px !important;
+  margin: 20px 0 !important;
+  padding: 15px !important;
+  background-color: rgba(52, 152, 219, 0.1) !important;
+  border-radius: 10px !important;
+  min-height: 120px !important;
+}
+
+/* Make sure the sequence slots are properly sized */
+.sequence-slot {
+  width: 100px;
+  height: 100px;
+  margin: 0 10px;
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+} 

@@ -559,6 +559,116 @@ class WordChallenge extends Challenge {
       console.log(`Element ${index} (${element.textContent}): positioned at ${left}px, ${top}px} (after ${attempts} attempts)`);
     });
   }
+
+  async generateSequenceChallenge(level) {
+    this.currentLevel = level;
+    
+    // Determine sequence length based on level
+    const sequenceLength = Math.min(3 + Math.floor(level / 2), 6);
+    
+    // Choose a category for this challenge
+    const randomIndex = Math.floor(Math.random() * this.categories.length);
+    const category = this.categories[randomIndex];
+    
+    // Load word list for this category
+    let words = await this.loadWordList(category.id);
+    
+    // Fall back to fallback words if necessary
+    if (!words || words.length < sequenceLength) {
+      words = this.fallbackWords[category.id] || [];
+    }
+    
+    // Choose random words from the list
+    const selectedWords = [];
+    while (selectedWords.length < sequenceLength && words.length > 0) {
+      const randomIndex = Math.floor(Math.random() * words.length);
+      const word = words[randomIndex];
+      
+      // Skip duplicate words or too long words
+      if (!selectedWords.includes(word) && word.length < 12) {
+        selectedWords.push(word);
+      }
+      // Remove word from the pool to avoid duplicates
+      words.splice(randomIndex, 1);
+    }
+    
+    // Generate elements for each word
+    const elements = [];
+    
+    selectedWords.forEach((word, index) => {
+      const element = document.createElement('div');
+      element.className = 'challenge-element word-element';
+      element.textContent = word;
+      element.dataset.word = word;
+      element.dataset.index = index;
+      
+      // Apply random background color
+      const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+      element.style.backgroundColor = color.hex;
+      
+      elements.push(element);
+    });
+    
+    // Decide on sequence type based on level
+    let sequenceType = 'alphabetical';
+    let correctSequence = [];
+    
+    if (level <= 3) {
+      // Alphabetical order
+      sequenceType = 'alphabetical';
+      correctSequence = [...elements]
+        .sort((a, b) => a.dataset.word.localeCompare(b.dataset.word))
+        .map(el => el.dataset.index);
+    } 
+    else if (level <= 6) {
+      // Word length order
+      sequenceType = 'length';
+      correctSequence = [...elements]
+        .sort((a, b) => a.dataset.word.length - b.dataset.word.length)
+        .map(el => el.dataset.index);
+    } 
+    else {
+      // Custom sequence (like a simple sentence or logical sequence)
+      sequenceType = 'custom';
+      
+      // For now, just use alphabetical as a fallback
+      correctSequence = [...elements]
+        .sort((a, b) => a.dataset.word.localeCompare(b.dataset.word))
+        .map(el => el.dataset.index);
+    }
+    
+    // Create instruction based on sequence type
+    let instruction = `Arrange the ${category.name} words`;
+    
+    if (sequenceType === 'alphabetical') {
+      instruction += ' in alphabetical order';
+    } 
+    else if (sequenceType === 'length') {
+      instruction += ' from shortest to longest';
+    } 
+    else {
+      instruction += ' in the correct order';
+    }
+    
+    // Shuffle all elements
+    this.shuffleArray(elements);
+    
+    return {
+      instruction,
+      elements,
+      correctSequence,
+      mode: 'sequence'
+    };
+  }
+
+  // Add a shuffle method to the class
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 }
 
 // If not using modules, add this line to make the class global

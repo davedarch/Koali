@@ -86,7 +86,8 @@ class Game {
   }
   
   async setupNextChallenge() {
-    console.log('Setting up next challenge...');
+    console.log('Game.setupNextChallenge - Setting up next challenge...');
+    console.log('Current level:', this.state.currentLevel);
     
     // Clean up previous challenge
     this.challenge.cleanup();
@@ -94,24 +95,32 @@ class Game {
     
     try {
       // Generate new challenge
+      console.log("Calling challenge.generateChallenge...");
       const challengeData = await this.challenge.generateChallenge(this.state.currentLevel);
       console.log('Challenge generated:', challengeData);
+      console.log('Challenge mode:', challengeData.mode);
       
       // Ensure the game area is properly sized before positioning elements
       // Force a reflow
       this.gameArea.offsetHeight;
       
       // Set up input method for this challenge
+      console.log("Setting up input method with challenge data");
       this.inputMethod.setupForChallenge(challengeData);
       
       // Set instruction
-      console.log('Setting instruction:', challengeData.instruction);
+      console.log('Original instruction:', challengeData.instruction);
+      const modifiedInstruction = this.inputMethod.modifyInstructionForInput(challengeData.instruction);
+      console.log('Modified instruction:', modifiedInstruction);
       
       // Update to use the game's setInstruction method
-      if (challengeData && challengeData.instruction) {
-        // Instead of this.feedback.setInstruction, use our method that creates clickable words
-        this.setInstruction(challengeData.instruction);
-      }
+      this.setInstruction(modifiedInstruction);
+      
+      // Update level indicator
+      this.progressBar.updateLevel(this.state.currentLevel);
+      
+      // Update progress bar
+      this.progressBar.updateProgress(this.state.levelProgress);
     } catch (error) {
       console.error('Error generating challenge:', error);
       this.feedback.setInstruction('Error: Could not generate challenge');
@@ -119,7 +128,9 @@ class Game {
   }
   
   async start() {
-    console.log('Starting game...');
+    console.log('Game.start - Starting game...');
+    console.log('URL:', window.location.href);
+    console.log('URL params:', new URLSearchParams(window.location.search).toString());
     
     // Set initial level display
     this.progressBar.updateLevel(this.state.currentLevel);
@@ -144,14 +155,18 @@ class Game {
   setInstruction(instruction) {
     const instructionElement = document.getElementById('instruction');
     
-    // Use speech service to create a clickable instruction
+    // Replace newline characters with <br> tags and wrap the entire instruction in a div
+    const formattedInstruction = `<div style="display:block; text-align:center;">${instruction.replace(/\n/g, '<br>')}</div>`;
+    
     if (this.speechService) {
-      this.speechService.createClickableInstruction(instruction, instructionElement);
+      // Use the speech service on the full instruction text (one clickable icon for all)
+      this.speechService.createClickableInstruction(formattedInstruction, instructionElement);
     } else {
-      instructionElement.textContent = instruction;
+      // Fall back on plain HTML if no speech service is available
+      instructionElement.innerHTML = formattedInstruction;
     }
     
-    // Let feedback system know about the new instruction (but don't overwrite our clickable content)
+    // Store the original instruction text as well
     this.feedback.currentInstruction = instruction;
     
     console.log('Setting instruction:', instruction);

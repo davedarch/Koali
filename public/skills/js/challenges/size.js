@@ -19,8 +19,8 @@ class SizeChallenge extends Challenge {
     const sizeMode = Math.random() > 0.5 ? 'biggest' : 'smallest';
     
     // Set minimum and maximum sizes based on level
-    const minSize = 40 + (level * 5);
-    const maxSize = 100 + (level * 10);
+    const minSize = 40 + (level * 3);
+    const maxSize = 80 + (level * 6);
     
     // Generate elements with varying sizes
     const elements = [];
@@ -163,9 +163,9 @@ class SizeChallenge extends Challenge {
     
     // Get container dimensions
     const containerRect = this.gameArea.getBoundingClientRect();
-    const usableWidth = containerRect.width * 0.8;
-    const usableHeight = containerRect.height * 0.6;
-    const startY = 100; // Start below the instruction
+    const usableWidth = containerRect.width * 0.7;
+    const usableHeight = containerRect.height * 0.5;
+    const startY = 120;
     
     // Array to keep track of positioned elements
     const positionedElements = [];
@@ -248,5 +248,112 @@ class SizeChallenge extends Challenge {
   init(gameArea) {
     super.init(gameArea);
     this.gameArea = gameArea; // Make sure to store the reference
+  }
+
+  generateSequenceChallenge(level) {
+    this.currentLevel = level;
+    
+    // Determine sequence length based on level
+    const sequenceLength = Math.min(3 + Math.floor(level / 2), 6);
+    
+    // Choose a shape type for this challenge
+    const shapes = ['circle', 'square'];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    
+    // Generate sizes for elements
+    const minSize = 30 + (level * 3);
+    const maxSize = 80 + (level * 5);
+    const sizeStep = (maxSize - minSize) / (sequenceLength - 1);
+    
+    // Generate elements with different sizes
+    const elements = [];
+    const sizes = [];
+    
+    // Generate sequence elements with progressive sizes
+    for (let i = 0; i < sequenceLength; i++) {
+      const size = Math.round(minSize + (i * sizeStep));
+      sizes.push(size);
+      
+      // Choose a random color
+      const colors = ['red', 'blue', 'green', 'purple', 'orange'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      // Create element
+      const element = this.createShapeElement(shape, color, size);
+      element.dataset.index = i;
+      element.dataset.size = size;
+      
+      elements.push(element);
+    }
+    
+    // Add some distractor elements for higher levels
+    if (level > 2) {
+      const distractorCount = Math.min(2 + Math.floor(level / 2), 4);
+      
+      for (let i = 0; i < distractorCount; i++) {
+        // Create a size that's not too close to existing sizes
+        let size;
+        do {
+          size = Math.round(minSize + (Math.random() * (maxSize - minSize)));
+        } while (sizes.some(s => Math.abs(s - size) < 10));
+        
+        // Add the size to prevent future duplicates
+        sizes.push(size);
+        
+        // Choose a random color
+        const colors = ['red', 'blue', 'green', 'purple', 'orange'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Create element
+        const element = this.createShapeElement(shape, color, size);
+        element.dataset.index = sequenceLength + i;
+        element.dataset.size = size;
+        
+        elements.push(element);
+      }
+    }
+    
+    // Define sequence direction (small to large or large to small)
+    const sequenceDirection = Math.random() > 0.5 ? 'ascending' : 'descending';
+    
+    // Sort elements by size to determine correct sequence
+    const sortedElements = [...elements].sort((a, b) => {
+      if (sequenceDirection === 'ascending') {
+        return parseInt(a.dataset.size) - parseInt(b.dataset.size);
+      } else {
+        return parseInt(b.dataset.size) - parseInt(a.dataset.size);
+      }
+    });
+    
+    // Extract indices of the correctly sorted elements
+    const correctSequence = sortedElements
+      .slice(0, sequenceLength)
+      .map(el => el.dataset.index);
+    
+    // Create instruction
+    const instructionText = sequenceDirection === 'ascending' 
+      ? 'smallest to largest' 
+      : 'largest to smallest';
+    
+    const instruction = `Arrange the shapes from ${instructionText}`;
+    
+    // Shuffle all elements
+    this.shuffleArray(elements);
+    
+    return {
+      instruction,
+      elements,
+      correctSequence,
+      mode: 'sequence'
+    };
+  }
+
+  // Add a shuffle method to the class
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 } 

@@ -16,6 +16,18 @@ class BasicChallenge extends Challenge {
   }
   
   generateChallenge(level) {
+    console.log(`BasicChallenge.generateChallenge - Level: ${level}`);
+    
+    // Check if we should use sequence mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const inputType = urlParams.get('input');
+    console.log(`BasicChallenge.generateChallenge - Input type from URL: ${inputType}`);
+    
+    if (inputType === 'sequence') {
+      console.log("BasicChallenge - Delegating to generateSequenceChallenge");
+      return this.generateSequenceChallenge(level);
+    }
+    
     this.currentLevel = level;
     
     // Determine number of elements based on level
@@ -224,5 +236,131 @@ class BasicChallenge extends Challenge {
     })));
     
     return elements;
+  }
+
+  generateSequenceChallenge(level) {
+    this.currentLevel = level;
+    console.log(`BasicChallenge.generateSequenceChallenge - Level: ${level}`);
+    
+    // Determine number of elements based on level
+    const sequenceLength = Math.min(3 + Math.floor(level / 2), 6);
+    console.log(`Sequence length: ${sequenceLength}`);
+    
+    // Create a pool of shape and color combinations
+    const usedCombinations = new Set();
+    
+    // First, create the correct sequence combinations
+    const correctSequence = [];
+    const sequenceDescription = [];
+    
+    for (let i = 0; i < sequenceLength; i++) {
+      let shape, color, combinationKey;
+      
+      // Keep trying until we find an unused combination
+      do {
+        shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
+        color = this.colors[Math.floor(Math.random() * this.colors.length)];
+        combinationKey = `${shape}-${color.name}`;
+      } while (usedCombinations.has(combinationKey));
+      
+      // Mark this combination as used
+      usedCombinations.add(combinationKey);
+      
+      // Add to the correct sequence
+      correctSequence.push({
+        shape,
+        color,
+        combinationKey
+      });
+      
+      // Add to sequence description
+      sequenceDescription.push(`${color.name} ${shape}`);
+    }
+    
+    // Create elements for the correct sequence
+    const sequenceElements = [];
+    
+    correctSequence.forEach((item, index) => {
+      const element = document.createElement('div');
+      element.classList.add('challenge-element', item.shape);
+      
+      // Apply color based on shape
+      if (item.shape === 'triangle') {
+        element.style.borderBottomColor = item.color.hex;
+      } else {
+        element.style.backgroundColor = item.color.hex;
+      }
+      
+      // Set dataset properties
+      element.dataset.color = item.color.name;
+      element.dataset.shape = item.shape;
+      element.dataset.index = index;
+      
+      sequenceElements.push(element);
+    });
+    
+    // Add additional elements as distractors
+    const distractorCount = Math.min(2 + Math.floor(level / 2), 4);
+    
+    for (let i = 0; i < distractorCount; i++) {
+      let shape, color, combinationKey;
+      
+      // Keep trying until we find an unused combination
+      do {
+        shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
+        color = this.colors[Math.floor(Math.random() * this.colors.length)];
+        combinationKey = `${shape}-${color.name}`;
+      } while (usedCombinations.has(combinationKey));
+      
+      // Mark this combination as used
+      usedCombinations.add(combinationKey);
+      
+      // Create element
+      const element = document.createElement('div');
+      element.classList.add('challenge-element', shape);
+      
+      // Apply color based on shape
+      if (shape === 'triangle') {
+        element.style.borderBottomColor = color.hex;
+      } else {
+        element.style.backgroundColor = color.hex;
+      }
+      
+      // Set dataset properties
+      element.dataset.color = color.name;
+      element.dataset.shape = shape;
+      element.dataset.index = sequenceLength + i;
+      
+      sequenceElements.push(element);
+    }
+    
+    // Create the instruction - this is the key part for the text-based sequence
+    const instruction = `Place these shapes in order:\n${sequenceDescription.join(', ')}`;
+    console.log(`Sequence instruction created: "${instruction}"`);
+    
+    // Store the indices of the correct sequence for validation
+    const correctIndices = Array.from({ length: sequenceLength }, (_, i) => i);
+    console.log("Correct sequence indices:", correctIndices);
+    
+    // Shuffle all elements for initial placement
+    this.shuffleArray(sequenceElements);
+    
+    const result = {
+      instruction,
+      elements: sequenceElements,
+      correctSequence: correctIndices,
+      mode: 'sequence'
+    };
+    
+    console.log("BasicChallenge.generateSequenceChallenge - Returning result:", result);
+    return result;
+  }
+
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 } 
