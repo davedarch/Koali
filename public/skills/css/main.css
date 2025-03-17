@@ -16,11 +16,17 @@ body {
 
 #instruction-container {
   margin-bottom: 20px;
-  padding: 30px 10px; /* Increase top padding */
+  padding: 30px 10px;
   min-height: 80px;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Add specific styling for sequence game */
+body[data-game-type="sequence"] #instruction-container {
+  margin-top: 40px;
+  padding-top: 50px;
 }
 
 #instruction {

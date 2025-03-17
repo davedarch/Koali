@@ -17,14 +17,20 @@
   border-radius: 4px;
 }
 
-/* Triangle shape */
-.triangle {
-  width: 0 !important;
-  height: 0 !important;
+/* Triangle shape - unified system-wide styling */
+.triangle,
+.draggable .triangle,
+.sequence-draggable .triangle,
+.challenge-element.triangle {
+  width: 0;
+  height: 0;
+  /* Increase size from the current working system */
+  border-left: 30px solid transparent;
+  border-right: 30px solid transparent;
+  border-bottom: 60px solid;
   background-color: transparent !important;
-  border-left: transparent solid calc(var(--size, 100px) / 2);
-  border-right: transparent solid calc(var(--size, 100px) / 2);
-  border-bottom: solid calc(var(--size, 100px));
+  margin: 15px auto;
+  position: static;
 }
 
 /* Triangle color classes */

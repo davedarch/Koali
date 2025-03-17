@@ -31,6 +31,7 @@
   background-color: rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   position: relative;
+  padding: 5px;
 }
 
 .sequence-slot.over {
@@ -110,17 +111,13 @@
   min-height: 120px !important;
 }
 
-/* Make sure the sequence slots are properly sized */
+/* Remove any conflicting triangle styles from sequence.css */
+.sequence-draggable .triangle {
+  /* No custom styles - use the system-wide ones instead */
+}
+
+/* Ensure sequence containers properly accommodate triangle sizing */
 .sequence-slot {
-  width: 100px;
-  height: 100px;
-  margin: 0 10px;
-  border: 2px dashed #3498db;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  position: relative;
+  /* Existing styles... */
+  padding: 5px; /* Add some padding to prevent clipping */
 } 

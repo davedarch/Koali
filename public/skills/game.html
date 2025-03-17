@@ -145,6 +145,13 @@
         
         // Start the game
         await game.start();
+
+        // Add this right after DOM loaded, as part of initialization
+        const gameType = new URLSearchParams(window.location.search).get('input');
+        if (gameType) {
+          document.body.setAttribute('data-game-type', gameType);
+          console.log(`Set body attribute data-game-type=${gameType}`);
+        }
       } catch (error) {
         console.error('Error loading game modules:', error);
         document.getElementById('instruction').textContent = 'Error loading game. Please try again.';

@@ -194,8 +194,8 @@ class SequenceInputMethod extends InputMethod {
         
         // Check if the sequence matches what's expected
         const isCorrect = this.currentSequence.every((element, index) => {
-          const expectedItem = expectedSequence[index];
-          const actualItem = `${element.dataset.color} ${element.dataset.shape}`;
+          const expectedItem = expectedSequence[index].trim();
+          const actualItem = `${element.dataset.color} ${element.dataset.shape}`.trim();
           
           console.log(`Position ${index}: Expected "${expectedItem}", Got "${actualItem}"`);
           
@@ -218,10 +218,10 @@ class SequenceInputMethod extends InputMethod {
           // Add visual feedback for incorrect sequence
           this.sequenceSlots.forEach((slot, index) => {
             const element = this.currentSequence[index];
-            const expectedItem = expectedSequence[index];
-            const actualItem = `${element.dataset.color} ${element.dataset.shape}`;
+            const expectedItem = expectedSequence[index].trim();
+            const actualItem = `${element.dataset.color} ${element.dataset.shape}`.trim();
             
-            if (expectedItem === actualItem) {
+            if (expectedItem.trim() === actualItem.trim()) {
               slot.classList.add('correct');
             } else {
               slot.classList.add('incorrect');
