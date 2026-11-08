@@ -1,20 +1,20 @@
 const express = require('express');
+const path = require('path');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4480; // pinned: see vault reference.local-ports.md
 
-// Serve static files if needed
-app.use(express.static('public'));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Add your API routes
-app.get('/api/example', (req, res) => {
-  res.json({ message: 'This is an example API response' });
-});
+// Mirror the Vercel serverless functions locally
+app.post('/api/submit-feedback', require('./api/submit-feedback.js'));
+app.get('/api/hello', require('./api/hello.js'));
 
-// For SPA routing (if applicable)
+// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(port, () => {
-  console.log(`Development server running at http://localhost:${port}`);
-}); 
+  console.log(`Koali dev server running at http://localhost:${port}`);
+});
