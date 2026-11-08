@@ -492,3 +492,24 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Debug panel initialized. Press Alt+D to toggle.');
   }, 1000);
 }); 
+// Layout check: with ?layoutcheck=1 in the URL, log every card/drop-target
+// rectangle and any overlaps once the round has rendered. Used by headless
+// screenshot runs to verify placement without a real browser session.
+if (new URLSearchParams(window.location.search).has('layoutcheck')) {
+  const report = () => {
+    const rects = [...document.querySelectorAll('.game-area > *')].map(e => {
+      const r = e.getBoundingClientRect();
+      return { t: (e.textContent || '').trim().slice(0, 14), x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+    });
+    const overlaps = [];
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i], b = rects[j];
+      if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) overlaps.push(`${a.t}<>${b.t}`);
+    }
+    const offscreen = rects.filter(r => r.x < 0 || r.y < 0 || r.x + r.w > window.innerWidth || r.y + r.h > window.innerHeight).map(r => r.t);
+    const ga = document.querySelector('.game-area'); const gr = ga ? ga.getBoundingClientRect() : {left:0,top:0};
+    console.log('LAYOUTRECTS area=' + Math.round(gr.left) + ',' + Math.round(gr.top) + ' ' + rects.map(r => `${r.t}:${r.x},${r.y},${r.w},${r.h}`).join(' ') + ' dropCell=' + String(ga && ga.dataset.dropCell).replace(/"/g, ''));
+    console.log(`LAYOUTCHECK count=${rects.length} overlaps=${overlaps.length} ${overlaps.join(',')} offscreen=${offscreen.join(',')}`);
+  };
+  window.addEventListener('load', () => setTimeout(report, 3500));
+}

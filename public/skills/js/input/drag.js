@@ -78,6 +78,7 @@ class DragInputMethod extends InputMethod {
       justifyContent: 'center',
       alignItems: 'center',
       position: 'absolute',
+      boxSizing: 'border-box',
       borderRadius: '10px',
       border: '3px dashed #333',
       backgroundColor: 'rgba(255, 255, 255, 0.2)'
@@ -107,25 +108,73 @@ class DragInputMethod extends InputMethod {
   
   positionDropTarget() {
     if (!this.container || !this.dropTarget) return;
-    
-    // Get container dimensions
+
     const containerRect = this.container.getBoundingClientRect();
-    
-    // Position in a sensible location (right side of container)
-    const dropWidth = 150;
-    const dropHeight = 150;
-    
-    // Randomize position but avoid overlaps with elements
-    const margin = 60;
-    const maxX = containerRect.width - dropWidth - margin;
-    const maxY = containerRect.height - dropHeight - margin;
-    
-    // Position not too close to edges
-    const x = margin + Math.random() * (maxX - margin * 2);
-    const y = margin + Math.random() * (maxY - margin * 2);
-    
-    this.dropTarget.style.left = `${x}px`;
-    this.dropTarget.style.top = `${y}px`;
+    let dropWidth = 150;
+    let dropHeight = 150;
+    let reserved = null;
+    if (this.container.dataset.dropCell) {
+      try { reserved = JSON.parse(this.container.dataset.dropCell); } catch (e) { reserved = null; }
+    }
+    if (reserved && reserved.w && reserved.h) {
+      dropWidth = reserved.w;
+      dropHeight = reserved.h;
+      this.dropTarget.style.width = `${dropWidth}px`;
+      this.dropTarget.style.height = `${dropHeight}px`;
+    }
+    const margin = 16;
+    const clearance = 20;
+
+    // Rects of the cards already placed, in container coordinates
+    // Every placed thing in the area except the drop target itself (the drag
+    // setup rewrites card classNames, so do not rely on .challenge-element)
+    const occupied = Array.from(this.container.children)
+      .filter(el => el !== this.dropTarget)
+      .map(el => {
+        const r = el.getBoundingClientRect();
+        return {
+          left: r.left - containerRect.left,
+          top: r.top - containerRect.top,
+          width: r.width,
+          height: r.height
+        };
+      });
+
+    const maxX = Math.max(margin, containerRect.width - dropWidth - margin);
+    const maxY = Math.max(margin, containerRect.height - dropHeight - margin);
+    const overlapsAny = (x, y, pad = clearance) => occupied.some(o =>
+      !(x + dropWidth + pad < o.left ||
+        x > o.left + o.width + pad ||
+        y + dropHeight + pad < o.top ||
+        y > o.top + o.height + pad));
+
+    // Prefer the cell the word layout reserved for us
+    let x = margin, y = margin, found = false;
+    // The layout guarantees the reserved cell is clear of cards (the gap may
+    // be under our clearance on small screens), so check it strictly.
+    if (reserved && !overlapsAny(reserved.x, reserved.y, -0.5)) { x = reserved.x; y = reserved.y; found = true; }
+    // Otherwise try random spots, then sweep a coarse grid for any free spot
+    for (let i = 0; i < 80 && !found; i++) {
+      x = margin + Math.random() * (maxX - margin);
+      y = margin + Math.random() * (maxY - margin);
+      found = !overlapsAny(x, y);
+    }
+    if (!found) {
+      const step = 20;
+      outer: for (let gy = margin; gy <= maxY; gy += step) {
+        for (let gx = margin; gx <= maxX; gx += step) {
+          if (!overlapsAny(gx, gy)) { x = gx; y = gy; found = true; break outer; }
+        }
+      }
+    }
+    if (!found) {
+      console.warn('No clear space for drop target; placing in corner');
+      x = margin; y = margin;
+    }
+
+    console.log(`DropTarget: occupied=${occupied.length} found=${found} at ${Math.round(x)},${Math.round(y)}`);
+    this.dropTarget.style.left = `${Math.round(x)}px`;
+    this.dropTarget.style.top = `${Math.round(y)}px`;
   }
   
   handleDragStart(e, element) {

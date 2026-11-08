@@ -154,11 +154,15 @@ class WordChallenge extends Challenge {
         selectedWords = newSelectedWords.sort(() => Math.random() - 0.5);
       }
       
+      // Take the required number of words
+      selectedWords = selectedWords.slice(0, wordCount);
+
       // For "single" mode, ensure we have exactly one target word
       if (mode === 'single') {
         const hasTargetWord = selectedWords.some(word => word.isTarget);
         if (!hasTargetWord) {
-          // If no target words in the selection, replace the first word with a target word
+          // If no target words survived the cut, swap one in (was previously
+          // done before slicing, so the only target could be sliced away)
           const targetWords = wordPool.filter(word => word.isTarget);
           if (targetWords.length > 0) {
             selectedWords[0] = targetWords[Math.floor(Math.random() * targetWords.length)];
@@ -179,8 +183,6 @@ class WordChallenge extends Challenge {
         }
       }
       
-      // Take the required number of words
-      selectedWords = selectedWords.slice(0, wordCount);
       
       // Create elements for the words
       const elements = this.createElements(selectedWords.length);
@@ -247,7 +249,7 @@ class WordChallenge extends Challenge {
             const firstLetter = targetCategory.name.trim().charAt(0).toLowerCase();
             const useAn = ['a', 'e', 'i', 'o', 'u'].includes(firstLetter);
             const article = useAn ? 'an' : 'a';
-            instruction = `Click on ${article} word that is ${article} ${targetCategory.name}`;
+            instruction = `Click on a word that is ${article} ${targetCategory.name}`;
           } else {
             instruction = `Click on the word that is a ${targetCategory.name}`;
           }
@@ -463,100 +465,136 @@ class WordChallenge extends Challenge {
     };
   }
 
+  renderElements(elements) {
+    while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
+    elements.forEach(element => this.container.appendChild(element));
+    this.container.offsetHeight;
+  }
+
   positionElements(elements) {
     // First, add elements to the DOM if not already there
     elements.forEach(element => {
       if (!this.container.contains(element)) {
         this.container.appendChild(element);
       }
+      // .word-element carries a 5px margin; on an absolutely positioned card
+      // that shifts the box off the computed left/top, so drop it.
+      element.style.margin = '0';
     });
-    
+
     // Force a reflow to ensure elements have their dimensions
     this.container.offsetHeight;
-    
-    // Get container dimensions
+
+    // The container is the .game-area, which already sits between the
+    // instruction bar and the progress bar, so only a small inset is needed.
     const containerRect = this.container.getBoundingClientRect();
-    const containerWidth = containerRect.width;
-    const containerHeight = containerRect.height;
-    
-    console.log(`Container dimensions: ${containerWidth} x ${containerHeight}`);
-    
-    // Define the usable area (central area not overlapping instructions/progress)
-    const topMargin = 120;    // Fixed top margin for instructions
-    const bottomMargin = 100; // Fixed bottom margin for progress bar
-    const leftMargin = 80;    // Fixed left margin
-    const rightMargin = 80;   // Fixed right margin
-    
-    const usableWidth = containerWidth - leftMargin - rightMargin;
-    const usableHeight = containerHeight - topMargin - bottomMargin;
-    
-    console.log(`Usable area: ${usableWidth} x ${usableHeight}`);
-    
-    // Keep track of placed elements to prevent overlaps
-    const placedElements = [];
-    // Safety margin around elements to prevent them from being too close
-    const safetyMargin = 20;
-    
-    // Position each element randomly within the usable area
-    elements.forEach((element, index) => {
-      // Get element dimensions (or use defaults)
-      const measuredWidth = element.offsetWidth;
-      const measuredHeight = element.offsetHeight;
-      const width = measuredWidth || 120;
-      const height = measuredHeight || 40;
-      
-      console.log(`Element ${index} measured dimensions: ${measuredWidth}x${measuredHeight} (using ${width}x${height})`);
-      
-      // Compute available random space (ensure non-negative)
-      const availableX = Math.max(0, usableWidth - width);
-      const availableY = Math.max(0, usableHeight - height);
-      
-      // Try to find a position without overlaps
-      let left = 0, top = 0;
-      let overlaps = true;
-      let attempts = 0;
-      const maxAttempts = 50; // Prevent infinite loops
-      
-      while (overlaps && attempts < maxAttempts) {
-        attempts++;
-        
-        // Generate random position
-        const randomFactorX = Math.random();
-        const randomFactorY = Math.random();
-        left = leftMargin + randomFactorX * availableX;
-        top = topMargin + randomFactorY * availableY;
-        
-        // Check if this position overlaps with any placed element
-        overlaps = placedElements.some(placedEl => {
-          // Check if rectangles overlap with safety margin
-          return !(
-            left + width + safetyMargin < placedEl.left ||
-            left > placedEl.left + placedEl.width + safetyMargin ||
-            top + height + safetyMargin < placedEl.top ||
-            top > placedEl.top + placedEl.height + safetyMargin
-          );
-        });
-        
-        if (attempts === maxAttempts) {
-          console.warn(`Couldn't find non-overlapping position for element ${index} after ${maxAttempts} attempts`);
-        }
+    const inset = 16;
+    const usableWidth = containerRect.width - inset * 2;
+    const usableHeight = containerRect.height - inset * 2;
+
+    // Measure the cards and lay them on a shuffled grid: every card gets its
+    // own cell, then is jittered inside the cell's slack so the layout still
+    // feels scattered. Random placement with rejection could not fit 7 cards
+    // of ~240x135 in the area and left them stacked on top of each other.
+    const n = elements.length;
+    // Drag input adds a 150x150 drop target after we lay out: reserve a cell
+    // for it so it never has to squeeze in between cards.
+    const reserveDrop = new URLSearchParams(window.location.search).get('input') === 'drag';
+    const slots = n + (reserveDrop ? 1 : 0);
+    // Drop target is 150x150 on a big screen but shrinks with the cards on
+    // small ones, so a phone can still fit ten cards plus the target.
+    let dropW = 0, dropH = 0;
+    const measure = () => elements.map(el => ({ w: el.offsetWidth || 120, h: el.offsetHeight || 40 }));
+    let sizes = measure();
+    const remeasure = () => {
+      const cardW = Math.max(...sizes.map(s => s.w));
+      const cardH = Math.max(...sizes.map(s => s.h));
+      if (reserveDrop) {
+        dropW = Math.min(150, Math.max(cardW, 90));
+        dropH = Math.min(150, Math.max(cardH, 60));
       }
-      
-      // Apply position
-      element.style.position = 'absolute';
-      element.style.left = `${left}px`;
-      element.style.top = `${top}px`;
-      
-      // Add this element to placed elements
-      placedElements.push({
-        left,
-        top,
-        width,
-        height,
-        element
+      maxW = Math.max(cardW, dropW);
+      maxH = Math.max(cardH, dropH);
+    };
+    let maxW, maxH;
+    remeasure();
+
+    let gap = 24;
+    let cols, rows, cellW, cellH;
+    const fits = () => {
+      cellW = maxW + gap;
+      cellH = maxH + gap;
+      cols = Math.max(1, Math.floor(usableWidth / cellW));
+      rows = Math.max(1, Math.floor(usableHeight / cellH));
+      return cols * rows >= slots;
+    };
+    const tryGaps = () => { gap = 24; while (!fits() && gap > 0) gap -= 4; return cols * rows >= slots; };
+
+    // Step down through card sizes until the grid fits. Cards are styled
+    // inline (48px / 40px 60px) by the challenge generator, so override here.
+    const sizeSteps = [
+      { font: '48px', pad: '40px 60px' },
+      { font: '40px', pad: '28px 44px' },
+      { font: '32px', pad: '20px 32px' },
+      { font: '26px', pad: '14px 22px' }
+    ];
+    let fitted = tryGaps();
+    for (let i = 1; i < sizeSteps.length && !fitted; i++) {
+      elements.forEach(el => { el.style.fontSize = sizeSteps[i].font; el.style.padding = sizeSteps[i].pad; });
+      this.container.offsetHeight;
+      sizes = measure();
+      remeasure();
+      fitted = tryGaps();
+    }
+    console.log(`WordLayout: ${n} cards, area ${Math.round(usableWidth)}x${Math.round(usableHeight)}, card ${maxW}x${maxH}, grid ${cols}x${rows}, gap ${gap}, fitted ${fitted}`);
+
+    if (!fitted) {
+      // Even the smallest cards do not fit: pack as tightly as possible and
+      // let the grid overflow rather than stacking cards on one another.
+      cols = Math.max(1, Math.floor(usableWidth / maxW));
+      rows = Math.ceil(slots / cols);
+      cellW = usableWidth / cols;
+      cellH = Math.max(maxH, usableHeight / rows);
+      console.warn(`Word cards do not fit: ${n} cards, grid ${cols}x${rows}`);
+    }
+
+    // Centre the used grid block in the area
+    const usedCols = Math.min(cols, slots);
+    const usedRows = Math.ceil(slots / cols);
+    const originX = inset + (usableWidth - usedCols * cellW) / 2;
+    const originY = inset + (usableHeight - usedRows * cellH) / 2;
+
+    // Shuffle cell order so the target word is not predictable by position
+    const cells = Array.from({ length: cols * usedRows }, (_, i) => i)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, slots);
+
+    // Hand the spare cell to the drag input via a data attribute
+    delete this.container.dataset.dropCell;
+    if (reserveDrop) {
+      const cell = cells[n];
+      const col = cell % cols;
+      const row = Math.floor(cell / cols);
+      this.container.dataset.dropCell = JSON.stringify({
+        x: Math.round(originX + col * cellW + (cellW - dropW) / 2),
+        y: Math.round(originY + row * cellH + (cellH - dropH) / 2),
+        w: dropW,
+        h: dropH
       });
-      
-      console.log(`Element ${index} (${element.textContent}): positioned at ${left}px, ${top}px} (after ${attempts} attempts)`);
+    }
+
+    elements.forEach((element, index) => {
+      const cell = cells[index];
+      const col = cell % cols;
+      const row = Math.floor(cell / cols);
+      const slackX = Math.max(0, cellW - sizes[index].w);
+      const slackY = Math.max(0, cellH - sizes[index].h);
+      const left = originX + col * cellW + Math.random() * slackX;
+      const top = originY + row * cellH + Math.random() * slackY;
+
+      element.style.position = 'absolute';
+      element.style.left = `${Math.round(left)}px`;
+      element.style.top = `${Math.round(top)}px`;
     });
   }
 
