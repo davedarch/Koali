@@ -354,12 +354,52 @@
       // Level system variables
       let currentPhase = parseInt(localStorage.getItem('spellGamePhase')) || 1;
       let currentFileIndex = parseInt(localStorage.getItem('spellGameFileIndex')) || 0;
-      const maxPhase = 8; // Currently only using Phase 1 files
       let gameProgress = parseInt(localStorage.getItem('spellGameProgress')) || 0;
       let challengeMode = false; // Track if we're in the audio-only challenge mode
       
-      // Word lists organized by phase and files
-      const phaseFiles = {
+      // Tracks: 'phonics' = Letters-and-Sounds style phases + advanced modules;
+      // 'curriculum' = National Curriculum weekly lists (Year 1-6, 3 terms, 12 weeks).
+      // URL params override saved state: ?track=curriculum&year=3&term=2&week=10
+      const urlParams = new URLSearchParams(window.location.search);
+      let currentTrack = urlParams.get('track') || localStorage.getItem('spellGameTrack') || 'phonics';
+      if (!['phonics', 'curriculum'].includes(currentTrack)) currentTrack = 'phonics';
+      if (currentTrack !== localStorage.getItem('spellGameTrack')) {
+        // Switching track: progress positions are per-track, so reset them
+        localStorage.setItem('spellGameTrack', currentTrack);
+        localStorage.setItem('spellGamePhase', 1);
+        localStorage.setItem('spellGameFileIndex', 0);
+        localStorage.setItem('spellGameProgress', 0);
+        localStorage.setItem('spellGameChallengeMode', false);
+        currentPhase = 1; currentFileIndex = 0; gameProgress = 0;
+      }
+      if (currentTrack === 'curriculum' && urlParams.get('year')) {
+        const y = Math.min(6, Math.max(1, parseInt(urlParams.get('year')) || 1));
+        const t = Math.min(3, Math.max(1, parseInt(urlParams.get('term')) || 1));
+        const w = Math.min(12, Math.max(1, parseInt(urlParams.get('week')) || 1));
+        currentPhase = (y - 1) * 3 + t; currentFileIndex = w - 1; gameProgress = 0;
+        localStorage.setItem('spellGamePhase', currentPhase);
+        localStorage.setItem('spellGameFileIndex', currentFileIndex);
+        localStorage.setItem('spellGameProgress', 0);
+        localStorage.setItem('spellGameChallengeMode', false);
+      }
+
+      // Curriculum track: 18 "phases" (Year x Term), 12 weekly files each
+      const curriculumPhaseFiles = {};
+      for (let y = 1; y <= 6; y++) {
+        for (let t = 1; t <= 3; t++) {
+          curriculumPhaseFiles[(y - 1) * 3 + t] =
+            Array.from({ length: 12 }, (_, i) => `spellings/word-lists/${y}.${t}.${i + 1}.txt`);
+        }
+      }
+      const curriculumLabel = (phase, fileIndex) => {
+        const y = Math.floor((phase - 1) / 3) + 1;
+        const t = ((phase - 1) % 3) + 1;
+        return `Year ${y} · Term ${t} · Week ${fileIndex + 1}`;
+      };
+      let currentFileTitle = ''; // from the '#' header lines of curriculum files
+      
+      // Word lists organized by phase and files (phonics track)
+      const phonicsPhaseFiles = {
         1: [
           'phonics/Phase1.1_BasicCVCWords.txt',
           'phonics/Phase1.2_BlendingPractice.txt',
@@ -419,6 +459,9 @@
         ]
       };
       
+      const phaseFiles = currentTrack === 'curriculum' ? curriculumPhaseFiles : phonicsPhaseFiles;
+      const maxPhase = Object.keys(phaseFiles).length;
+
       // Get current file path
       function getCurrentFilePath() {
         return phaseFiles[currentPhase][currentFileIndex];
@@ -426,6 +469,7 @@
       
       // Get current file name (for display)
       function getCurrentFileName() {
+        if (currentTrack === 'curriculum') return currentFileTitle || curriculumLabel(currentPhase, currentFileIndex);
         const path = getCurrentFilePath();
         // Extract the file name without extension and remove Phase prefix
         const fileName = path.split('/').pop().replace('.txt', '').replace(/^Phase\d+_/, '');
@@ -445,7 +489,8 @@
         const fileName = getCurrentFileName();
         const totalWords = totalWordsInFile || 0;
         
-        levelIndicator.textContent = `Phase ${currentPhase}: ${fileName} (${currentWordIndex}/${totalWords})${challengeMode ? ' - Challenge' : ''}`;
+        const prefix = currentTrack === 'curriculum' ? curriculumLabel(currentPhase, currentFileIndex) : `Phase ${currentPhase}`;
+        levelIndicator.textContent = `${prefix}: ${fileName} (${currentWordIndex}/${totalWords})${challengeMode ? ' - Challenge' : ''}`;
       }
 
       // Update the progress bar
@@ -469,9 +514,15 @@
           const text = await response.text();
           console.log(`Successfully loaded words from ${filePath}:`, text);
           
-          const words = text.split('\n')
-            .map(word => word.trim())
-            .filter(word => word.length > 0);
+          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+          const headers = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\s*/, ''));
+          // Second header line is the topic ("Adding -s"); first is "Year 1 Term 1 Week 10"
+          currentFileTitle = headers.length > 1 ? headers[1] : (headers[0] || '');
+          const words = lines
+            .filter(l => !l.startsWith('#'))
+            .flatMap(l => l.split('/'))          // homophone pairs "accept/except" -> two words
+            .map(w => w.trim())
+            .filter(w => w.length > 0);
             
           console.log(`Processed ${words.length} words from file`);
           console.log('Words loaded successfully');
@@ -1160,6 +1211,12 @@
               <button onclick="jumpToPhase(7)">Module 2</button>
               <button onclick="jumpToPhase(8)">Module 3</button>
             </div>
+            <div style="margin-bottom: 8px;">
+              <strong style="color: #f1c40f;">Curriculum (Year/Term):</strong><br>
+              <button onclick="switchTrack('phonics')" ${currentTrack === 'phonics' ? 'disabled' : ''}>Phonics track</button>
+              <button onclick="switchTrack('curriculum')" ${currentTrack === 'curriculum' ? 'disabled' : ''}>Curriculum track</button><br>
+              ${[1,2,3,4,5,6].map(y => `<button onclick="jumpToYear(${y})">Y${y}</button>`).join('')}
+            </div>
             <div>
               <strong style="color: #2ecc71;">Debug Tools:</strong><br>
               <button onclick="autoComplete()">Auto Complete Word</button>
@@ -1171,6 +1228,14 @@
         document.body.appendChild(debugControls);
 
         // Debug helper functions
+        window.switchTrack = (track) => {
+          const u = new URL(window.location.href);
+          u.search = `?track=${track}`;
+          window.location.href = u.toString();
+        };
+        window.jumpToYear = (year) => {
+          window.location.href = `?track=curriculum&year=${year}&term=1&week=1`;
+        };
         window.jumpToPhase = (phase) => {
           currentPhase = phase;
           currentFileIndex = 0;
@@ -1216,7 +1281,7 @@
               try {
                 const response = await fetch(filePath);
                 const text = await response.text();
-                const wordCount = text.split('\n').filter(w => w.trim()).length;
+                const wordCount = text.split('\n').filter(w => w.trim() && !w.trim().startsWith('#')).length;
                 results.innerHTML += `<div style="color: green">✓ ${filePath}: ${wordCount} words</div>`;
               } catch (error) {
                 results.innerHTML += `<div style="color: red">✗ ${filePath}: ${error.message}</div>`;
